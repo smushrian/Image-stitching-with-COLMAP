@@ -53,8 +53,8 @@ for i = 1:points.length
 end
 
 hold on;
-plot3(camera_centers(:,1), camera_centers(:,2), camera_centers(:,3), 'xr');
-plot3(view_dirs(:,1), view_dirs(:,2), view_dirs(:,3), '-b');
+plot3(camera_centers(:,1), camera_centers(:,2), camera_centers(:,3),'xr','MarkerSize',10,'linewidth',3);
+plot3(view_dirs(:,1), view_dirs(:,2), view_dirs(:,3), '-b','MarkerSize',10,'linewidth',3);
 plot3(xyz(:,1), xyz(:,2), xyz(:,3), '.k');
 hold off;
 
