@@ -5,5 +5,6 @@ automatic_reconstructor()
 cameras, points3D, images = get_data_from_binary()
 # print(points3D[1].xyz)
 a,b,d = find_plane(points3D)
+plot_3D(points3D,(a,b,d))
 print(a,b,d)
 

@@ -25,7 +25,7 @@ def find_plane(points):
 
     XY = xyz[:, :2]
     Z = xyz[:, 2]
-    ransac = linear_model.RANSACRegressor(residual_threshold=0.01)
+    ransac = linear_model.RANSACRegressor(residual_threshold=0.3)
 
     ransac.fit(XY, Z)
     a, b = ransac.estimator_.coef_  # 係数
@@ -47,5 +47,32 @@ def show_graph(X, Y, Z):
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     ax.plot_surface(X, Y, Z)
+
+    plt.show()
+
+def plot_3D(points,plane):
+    dict_length = len(points)
+    coordinates = []
+    # ids = []
+    for i in range(1, dict_length + 1):
+        # print(point)
+        coordinates.append(points[i].xyz)
+        # ids.append(points[i].id)
+
+    xyz = np.asarray(coordinates)
+    # ax = plt.axes(projection='3d')
+    a, b, d = plane
+    c = 1
+    x = np.linspace(-10, 10, 10)
+    y = np.linspace(-10, 10, 10)
+
+    X, Y = np.meshgrid(x, y)
+    Z = (d - a * X - b * Y) / c
+    plt3d = plt.figure().gca(projection='3d')
+    plt3d.plot_surface(X, Y, Z, alpha=0.5)
+    # plt3d.hold(True)
+    print((xyz))
+    plt3d.scatter3D(xyz[:,0], xyz[:,1], xyz[:,2],  cmap='Greens')
+
 
     plt.show()
