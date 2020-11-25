@@ -1,7 +1,7 @@
 import cv2
 
 # Opens the Video file
-cap= cv2.VideoCapture('C:/Users/hurr/Documents/SKOLARBETE/Design project in systems, control and mechatronics/videos/my_video-1.mkv')
+cap= cv2.VideoCapture('C:/Users/hurr/Documents/SKOLARBETE/Design_project_in_systems_control_and_mechatronics/videos/my_video-1.mkv')
 
 i=0
 while(cap.isOpened()):
@@ -14,7 +14,7 @@ while(cap.isOpened()):
 
 cap.release()
 
-cap= cv2.VideoCapture('C:/Users/hurr/Documents/SKOLARBETE/Design project in systems, control and mechatronics/videos/my_video-2.mkv')
+cap= cv2.VideoCapture('C:/Users/hurr/Documents/SKOLARBETE/Design_project_in_systems_control_and_mechatronics/videos/my_video-2.mkv')
 
 i=0
 while(cap.isOpened()):
@@ -27,7 +27,7 @@ while(cap.isOpened()):
 
 cap.release()
 
-cap= cv2.VideoCapture('C:/Users/hurr/Documents/SKOLARBETE/Design project in systems, control and mechatronics/videos/my_video-3.mkv')
+cap= cv2.VideoCapture('C:/Users/hurr/Documents/SKOLARBETE/Design_project_in_systems_control_and_mechatronics/videos/my_video-3.mkv')
 
 i=0
 while(cap.isOpened()):
@@ -40,7 +40,7 @@ while(cap.isOpened()):
 
 cap.release()
 
-cap= cv2.VideoCapture('C:/Users/hurr/Documents/SKOLARBETE/Design project in systems, control and mechatronics/videos/my_video-4.mkv')
+cap= cv2.VideoCapture('C:/Users/hurr/Documents/SKOLARBETE/Design_project_in_systems_control_and_mechatronics/videos/my_video-4.mkv')
 
 i=0
 while(cap.isOpened()):

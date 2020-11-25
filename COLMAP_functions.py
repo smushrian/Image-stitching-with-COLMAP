@@ -36,7 +36,8 @@ def automatic_reconstructor():
     image_path = workspace_path + '/images'
     os.system('colmap automatic_reconstructor \
             --workspace_path ' + workspace_path +
-            ' --image_path ' + image_path)
+            ' --image_path ' + image_path +
+              ' --dense 1')
     return
 def fetch_cameras_from_database():
     try:
@@ -138,15 +139,12 @@ def get_data_from_binary():
     dirname = os.path.dirname(__file__)
     os.chdir(dirname + '/COLMAP')
     database_path = dirname + '/COLMAP/database.db'
-    camera_path = dirname + '/COLMAP/sparse/0/cameras.bin'
-    points_path = dirname + '/COLMAP/sparse/0/points3D.bin'
-    images_path = dirname + '/COLMAP/sparse/0/images.bin'
+    camera_path = dirname + '/COLMAP/dense/0/sparse/cameras.bin'
+    points_path = dirname + '/COLMAP/dense/0/sparse/points3D.bin'
+    images_path = dirname + '/COLMAP/dense/0/sparse/images.bin'
     cameras = read_write_model.read_cameras_binary(camera_path)
     points3D = read_write_model.read_points3d_binary(points_path)
     images = read_write_model.read_images_binary(images_path)
-    print(cameras)
-    print(points3D)
-    print(images)
     return cameras, points3D, images
 # database_path = create_database()
 
