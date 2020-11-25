@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python_scripts
 
 # Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
 # All rights reserved.

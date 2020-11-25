@@ -29,34 +29,33 @@
 #
 # Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-import filecmp
-from read_write_fused_vis import read_fused, write_fused
+import numpy as np
+from read_write_dense import read_array, write_array
 
 
 def main():
     import sys
-    if len(sys.argv) != 5:
-        print("Usage: python test_read_write_fused_vis.py "
-              "path/to/input_fused.ply path/to/input_fused.ply.vis " 
-              "path/to/output_fused.ply path/to/output_fused.ply.vis")
+    if len(sys.argv) != 3:
+        print("Usage: python_scripts test_read_write_dense.py "
+              "path/to/dense/input.bin path/to/dense/output.bin")
         return
 
-    print("Checking consistency of reading and writing fused.ply and fused.ply.vis files ...")
+    print("Checking consistency of reading and writing dense arrays "
+          + "(depth maps / normal maps) ...")
 
-    path_to_fused_ply_input = sys.argv[1]
-    path_to_fused_ply_vis_input = sys.argv[2]
-    path_to_fused_ply_output = sys.argv[3]
-    path_to_fused_ply_vis_output = sys.argv[4]
+    path_to_dense_input = sys.argv[1]
+    path_to_dense_output = sys.argv[2]
 
-    mesh_points = read_fused(path_to_fused_ply_input, path_to_fused_ply_vis_input)
-    write_fused(mesh_points, path_to_fused_ply_output, path_to_fused_ply_vis_output)
+    dense_input = read_array(path_to_dense_input)
+    print("Input shape: " + str(dense_input.shape))
 
-    assert filecmp.cmp(path_to_fused_ply_input, path_to_fused_ply_output)
-    assert filecmp.cmp(path_to_fused_ply_vis_input, path_to_fused_ply_vis_output)
+    write_array(dense_input, path_to_dense_output)
+    dense_output = read_array(path_to_dense_output)
 
-    print("... Results are equal.")
+    np.testing.assert_array_equal(dense_input, dense_output)
+
+    print("... dense arrays are equal.")
 
 
 if __name__ == "__main__":
     main()
-

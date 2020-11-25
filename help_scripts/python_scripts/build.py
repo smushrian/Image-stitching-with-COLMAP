@@ -64,7 +64,7 @@ def parse_args():
     parser.add_argument("--build_path", required=True)
     parser.add_argument("--colmap_path", required=True,
                         help="The path to the top COLMAP source folder, which "
-                             "contains src/, scripts/, CMakeLists.txt, etc." )
+                             "contains src/, help_scripts/, CMakeLists.txt, etc." )
     parser.add_argument("--qt_path", default="",
                         required=PLATFORM_IS_WINDOWS or PLATFORM_IS_MAC,
                         help="The path to the folder containing Qt, "

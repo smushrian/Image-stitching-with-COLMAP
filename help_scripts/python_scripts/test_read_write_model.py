@@ -74,7 +74,7 @@ def compare_points(points3D1, points3D2):
 def main():
     import sys
     if len(sys.argv) != 3:
-        print("Usage: python read_model.py "
+        print("Usage: python_scripts read_model.py "
               "path/to/model/folder/txt path/to/model/folder/bin")
         return
 

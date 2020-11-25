@@ -60,7 +60,7 @@ def main():
     mkdir_if_not_exists(os.path.join(args.app_path, "lib"))
     mkdir_if_not_exists(os.path.join(args.app_path, "lib/platforms"))
 
-    # Copy batch scripts to app directory.
+    # Copy batch help_scripts to app directory.
     shutil.copyfile(
         os.path.join(args.install_path, "COLMAP.bat"),
         os.path.join(args.app_path, "COLMAP.bat"))
