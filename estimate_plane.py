@@ -7,7 +7,8 @@ import open3d as o3d
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
+from sympy import Matrix
+from scipy.spatial.transform import Rotation as R
 
 def find_plane(points):
     # {1: Point3D(id=1, xyz=array([4.62656199, -0.45836651, 18.59784168]), rgb=array([12, 16, 19]),
@@ -43,7 +44,7 @@ def angle_rotate(a, b, d):
     return rad - math.pi
 
 
-def plot_3D(points,plane):
+def plot_3D(points,plane,all_cameras):
     dict_length = len(points)
     coordinates = []
     # ids = []
@@ -65,11 +66,28 @@ def plot_3D(points,plane):
     plt3d.plot_surface(X, Y, Z, alpha=0.5)
     # plt3d.hold(True)
     plt3d.scatter3D(xyz[:,0], xyz[:,1], xyz[:,2],  cmap='Greens')
-
-
+    for key in all_cameras:
+        cam_center, principal_axis = get_camera_center_and_axis(all_cameras[key])
+        plt3d.quiver(cam_center[0],cam_center[1],cam_center[2], principal_axis[:, 0], principal_axis[:, 1], principal_axis[:, 2], length=10, color='r')
+    # #first cam
+    # cam_center1, principal_axis1 = plot_camera(P1)
+    # plt3d.quiver3(cam_center1, principal_axis1[:, 0], principal_axis1[:, 1], principal_axis1[:, 2], color='r', scale=5)
+    # # second cam
+    # cam_center2, principal_axis2 = plot_camera(P2)
+    # plt3d.quiver3(cam_center2, principal_axis2[:, 0], principal_axis2[:, 1], principal_axis2[:, 2], color='b', scale=5)
+    # # third cam
+    # cam_center3, principal_axis3 = plot_camera(P3)
+    # plt3d.quiver3(cam_center3, principal_axis3[:, 0], principal_axis3[:, 1], principal_axis3[:, 2], color='g', scale=5)
+    # # fourth cam
+    # cam_center4, principal_axis4 = plot_camera(P4)
+    # plt3d.quiver3(cam_center4, principal_axis4[:, 0], principal_axis4[:, 1], principal_axis4[:, 2], color='c', scale=5)
     plt.show()
 
-
+def get_camera_center_and_axis(P):
+    P = Matrix(P)
+    cam_center = P.nullspace()[0]
+    principal_axis = P[2, :3]
+    return cam_center, principal_axis
 def ransac_find_plane(pts, threshold):
 # pts: Nx3, N 3D points
 # threshold: Scalar, threshold , threshold for points to be inliers
@@ -165,3 +183,9 @@ def residual_lengths_points_to_plane(pts, plane):
         #length of difference vector projected onto normal vector
         residual_lengths[i] = abs(np.dot(u,normal_vec))
     return residual_lengths
+
+def camera_quat_to_P(quat, t):
+    R_matrix = R.from_quat(quat).as_matrix()
+    t = np.asarray(t)
+    P = np.column_stack((R_matrix,t))
+    return P
