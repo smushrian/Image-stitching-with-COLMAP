@@ -35,9 +35,10 @@ def automatic_reconstructor():
     workspace_path = dirname + '/COLMAP'
     image_path = workspace_path + '/images'
     os.system('colmap automatic_reconstructor \
-            --workspace_path ' + workspace_path +
+              --camera_model SIMPLE_RADIAL ' +
+            '--workspace_path ' + workspace_path +
             ' --image_path ' + image_path +
-              ' --dense 1')
+              ' --dense 1 ')
     return
 
 
