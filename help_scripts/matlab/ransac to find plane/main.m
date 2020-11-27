@@ -51,7 +51,43 @@ D = plane(4);
 z = -1/C*(A*x + B*y + D); % Solve for z data
 surf(x,y,z) %Plot the surface
 
+%% Compute projection of image down on plane
 
+% λu = R(U − C) = PU (and appending a 1 on U)
+
+% Restrict stichted image to a certain resolution
+% GrandmasDialUp, potato, meh, 4k
+resolution = 'ok';
+
+switch resolution
+    case 'meh'
+        stichedImage = zeros(1080,1920);
+    case '4k'
+        stichedImage = zeros(2160,3840);
+    otherwise
+        error('Unrecognized image resolution')
+end
+
+C = images(1).t;
+R = images(1).R;
+
+% Simple radial camera
+% params = f, cx, cy, k (from colmap code)
+% Likely focal length, radial dist x, radial dist y,
+
+f  = cameras(2).params(1); % in pixels
+%f  = 3 % in in mm [from lens spec]
+cx = cameras(2).params(2); % principal point (in pixels)
+cy = cameras(2).params(3); % principal point (in pixels)
+k  = cameras(2).params(4); % 
+
+K = inv(Kinv);
+
+%P = K[R|-RC], K IS NOT IMPLEMENTED YET
+Pc = [R,-R*C];
+
+% Pc*U = u_undist
+% use k to get dist
 
 
 
