@@ -3,20 +3,24 @@ from sympy import Matrix
 
 def line_from_pixel(pixelpoint,P):
     #takes point on form [x,y]
-    #P is regular camera matrix
-    ray_cam = np.asarray([pixelpoint[0], pixelpoint[1], 0])
+    #P is regular camera matrix 3x4
+    ray_cam = np.asarray([pixelpoint[0], pixelpoint[1], 0, 1])
     P = Matrix(P)
     start_point = P.nullspace()[0]
-    # P_4x4 = np.vstack(P,[0, 0, 0, 1])
-    Pinv = np.linalg.pinv(P)
-    print(Pinv)
-    line_point = np.matmul(np.linalg.pinv(P),np.asarray([pixelpoint[0],pixelpoint[1],1]))
-    ray = np.matmul(np.linalg.pinv(P),ray_cam)
-    return ray, start_point, line_point
+    P_4x4 = np.asarray(np.vstack((P,[0, 0, 0, 1]))).astype(float)
+    print(P_4x4)
+    Pinv4x4 = np.linalg.inv(P_4x4)
+    print(Pinv4x4)
+    line_point = np.matmul(np.linalg.inv(P_4x4),np.asarray([pixelpoint[0],pixelpoint[1],1,1]))
+    line_point = [line_point[:3]/line_point[3]]
+    ray_global = np.matmul(np.linalg.inv(P_4x4),ray_cam)
+    ray_global = [ray_global[:3]/ray_global[3]]
+    return ray_global, start_point, line_point
 def intersection_line_plane(ray,ray_start,ray_point,plane):
-    plane_normal = np.array([[plane[0],plane[1],plane[2]]]).T
+    plane_normal = np.array([[plane[0],plane[1],plane[2]]])
     plane_point = np.array([[0, 0, -plane[3]/plane[2]]]).T
     ndotu = plane_normal.dot(ray)
+    print(ndotu)
     epsilon = 1e-6
     if abs(ndotu) < epsilon:
         print("no intersection or line is within plane")

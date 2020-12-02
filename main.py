@@ -17,7 +17,7 @@ for key in points3D:
 coordinates = np.asarray(coordinates)
 
 #Estimate a floor plane
-plane,min_outlier = ransac_find_plane(coordinates,0.3)
+plane,min_outlier = ransac_find_plane(coordinates,0.05)
 
 
 #Get all camera matrices
@@ -31,16 +31,20 @@ for key in images:
 
 #Get all camera intrinsics
 print(cameras[1])
-
+K_matrices = {}
+for key in cameras:
+    K_matrices[key] = build_intrinsic_matrix(cameras[key])
 #define virtual camera
 Rv = np.eye(3)
 tv = np.asarray([1, 1, 1])
 Pv = np.column_stack((Rv,tv))
+# Pv = np.matrix([[1,2],[3,4]], dtype='float')
+# Pv = np.vstack((Pv,[0, 0, 0, 1]))
 #define virtual image size
 w = 1920
 h = 1080
 #color image
-# color_virtual_image(plane,Pv,w,h,imgs,all_camera_matrices)
+color_virtual_image(plane,Pv,w,h,imgs,all_camera_matrices)
 
 
 plot_3D(points3D,plane,all_camera_matrices)
