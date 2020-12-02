@@ -30,7 +30,8 @@ for key in images:
     all_camera_matrices[key] = camera_quat_to_P(images[key].qvec,images[key].tvec)
 
 #Get all camera intrinsics
-print(cameras[1])
+print(imgs[1][1,1,:3])
+# print(cameras[1])
 K_matrices = {}
 for key in cameras:
     K_matrices[key] = build_intrinsic_matrix(cameras[key])
@@ -43,9 +44,12 @@ Pv = np.column_stack((Rv,tv))
 #define virtual image size
 w = 1920
 h = 1080
+f = 1
+K_virt = np.asarray([[f, 0, w/2],[0, f, h/2],[0, 0, 1]])
 #color image
-color_virtual_image(plane,Pv,w,h,imgs,all_camera_matrices)
-
-
-plot_3D(points3D,plane,all_camera_matrices)
+color_images = color_virtual_image(plane,Pv,w,h,imgs,all_camera_matrices,K_matrices,K_virt)
+print('hej')
+imgplot = plt.imshow(color_images[1])
+plt.show()
+# plot_3D(points3D,plane,all_camera_matrices)
 # print(a,b,d)

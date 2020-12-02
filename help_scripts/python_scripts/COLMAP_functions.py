@@ -66,5 +66,5 @@ def build_intrinsic_matrix(camera):
     # K = [f, 0, cx;
     #      0, f, cy;
     #      0, 0, 1];
-    K = np.asarray([[params[0], 0, params[1],[0, params[0], params[2],[0, 0, 1]]]])
+    K = np.asarray([[params[0], 0, params[1]],[0, params[0], params[2]],[0, 0, 1]])
     return K
