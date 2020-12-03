@@ -62,12 +62,13 @@ def plot_3D(points,plane,all_cameras):
 
     X, Y = np.meshgrid(x, y)
     Z = (d + a * X + b * Y) / -c
+    plt.figure(2)
     plt3d = plt.figure().gca(projection='3d')
     plt3d.plot_surface(X, Y, Z, alpha=0.5)
     # plt3d.hold(True)
     plt3d.scatter3D(xyz[:,0], xyz[:,1], xyz[:,2],  cmap='Greens')
     for key in all_cameras:
-        cam_center, principal_axis = get_camera_center_and_axis(all_cameras[key])
+        cam_center, principal_axis = get_camera_center_and_axis(all_cameras[key]['P'])
         print(principal_axis[0,0])
         print(cam_center[1,0])
         plt3d.quiver(cam_center[0,0],cam_center[1,0],cam_center[2,0], principal_axis[0,0], principal_axis[0,1], principal_axis[0,2], length=2, color='r')
@@ -180,4 +181,5 @@ def camera_quat_to_P(quat, t):
     R_matrix = R.from_quat(quat_scalar_last).as_matrix()
     t = np.asarray(t)
     P = np.column_stack((R_matrix,t))
-    return P
+    cam = {'P': P, 'R': R_matrix, 't': t}
+    return cam
