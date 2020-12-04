@@ -36,10 +36,11 @@ def automatic_reconstructor():
     workspace_path = os.getcwd()
     image_path = workspace_path + '/images'
     os.system('colmap automatic_reconstructor \
-              --camera_model SIMPLE_RADIAL ' +
+              --camera_model RADIAL ' +
             '--workspace_path ' + workspace_path +
             ' --image_path ' + image_path +
-              ' --dense 1 ')
+              ' --dense 1 ' +
+              '--use_gpu 0 ')
     return
 
 
@@ -67,5 +68,6 @@ def build_intrinsic_matrix(camera):
     #      0, f, cy;
     #      0, 0, 1];
     K = np.asarray([[params[0], 0, params[1]],[0, params[0], params[2]],[0, 0, 1]])
-    dist_params = [params[3], 0]#params[4]]
+    # print('params',params)
+    dist_params = [params[3], params[4]]
     return K, dist_params

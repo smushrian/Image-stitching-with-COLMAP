@@ -17,7 +17,7 @@ for key in points3D:
 coordinates = np.asarray(coordinates)
 
 #Estimate a floor plane
-plane,min_outlier = ransac_find_plane(coordinates,0.3)
+plane,min_outlier = ransac_find_plane(coordinates,10)
 
 
 #Get all camera matrices
