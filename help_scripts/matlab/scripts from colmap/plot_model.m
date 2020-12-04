@@ -40,7 +40,7 @@ for i = 1:images.length
     image = images(image_id);
     camera_centers(i,:) = -image.R' * image.t;
     view_dirs(3 * i - 2,:) = camera_centers(i,:);
-    view_dirs(3 * i - 1,:) = camera_centers(i,:)' + image.R' * [0; 0; 0.3];
+    view_dirs(3 * i - 1,:) = camera_centers(i,:)' + image.R' * [0; 0; 1]; % originally 0.3
     view_dirs(3 * i,:) = nan;
 end
 
