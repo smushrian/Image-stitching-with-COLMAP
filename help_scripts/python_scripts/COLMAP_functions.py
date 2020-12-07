@@ -32,7 +32,7 @@ def match_features(database_path):
 
 def automatic_reconstructor():
     dirname = os.path.dirname(__file__)
-    os.chdir(dirname + '/../../COLMAP')
+    os.chdir(dirname + '/../../COLMAP_w_CUDA')
     workspace_path = os.getcwd()
     image_path = workspace_path + '/images'
     os.system('colmap automatic_reconstructor \
@@ -51,12 +51,15 @@ def get_data_from_binary():
     dirname = os.getcwd()
     print(dirname)
     database_path = dirname + '/database.db'
-    # camera_path = dirname + '/dense/0/sparse/cameras.bin'
-    # points_path = dirname + '/dense/0/sparse/points3D.bin'
-    # images_path = dirname + '/dense/0/sparse/images.bin'
-    camera_path = dirname + '/sparse/0/cameras.bin'
-    points_path = dirname + '/sparse/0/points3D.bin'
-    images_path = dirname + '/sparse/0/images.bin'
+    # camera_path = dirname + '/dense/0/den/cameras.bin'
+    # points_path = dirname + '/dense/0/den/points3D.bin'
+    # images_path = dirname + '/dense/0/den/images.bin'
+    camera_path = dirname + '/dense/cameras.bin'
+    points_path = dirname + '/dense/points3D.bin'
+    images_path = dirname + '/dense/images.bin'
+    # camera_path = dirname + '/sparse/0/cameras.bin'
+    # points_path = dirname + '/sparse/0/points3D.bin'
+    # images_path = dirname + '/sparse/0/images.bin'
     cameras = read_write_model.read_cameras_binary(camera_path)
     points3D = read_write_model.read_points3d_binary(points_path)
     images = read_write_model.read_images_binary(images_path)
@@ -69,5 +72,20 @@ def build_intrinsic_matrix(camera):
     #      0, 0, 1];
     K = np.asarray([[params[0], 0, params[1]],[0, params[0], params[2]],[0, 0, 1]])
     # print('params',params)
-    dist_params = [params[3], params[4]]
+    dist_params = [params[3], 0]
     return K, dist_params
+
+def stereo_fusion():
+    project_path = os.getcwd()
+    workspace_path = project_path + '/dense/0'
+    print(workspace_path)
+    print('Här')
+    output_path = workspace_path + '/..'
+    os.system('colmap stereo_fusion \
+                 --output_type bin ' +
+              '--output_path ' + output_path +
+              # ' --project_path ' + project_path +
+              ' --workspace_path ' + workspace_path) # +
+              # '--workspace_format COLMAP ' +
+              # '--input_type geometric ')
+

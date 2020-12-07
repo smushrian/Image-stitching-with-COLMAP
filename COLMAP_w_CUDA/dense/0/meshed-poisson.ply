@@ -1,0 +1,30 @@
+ply
+format binary_little_endian 1.0
+comment Running Screened Poisson Reconstruction (Version 8.0)
+comment --in E:\User\Karl-Fredrik\Documents\GitHub\Image-stitching-with-COLMAP\COLMAP_w_CUDA\dense\0\fused.ply
+comment --depth 13
+comment --out E:\User\Karl-Fredrik\Documents\GitHub\Image-stitching-with-COLMAP\COLMAP_w_CUDA\dense\0\meshed-poisson.ply
+comment --pointWeight 1.000000
+comment --density
+comment --color 32.000000
+comment #             Tree set in:       0.2 (s),     513.3 (MB)
+comment #      Constraints set in:       0.3 (s),     521.7 (MB)
+comment # Linear system solved in:       1.5 (s),     523.5 (MB)
+comment #        Got triangles in:       0.3 (s),     520.8 (MB)
+comment #             Total Solve:       2.3 (s),     523.5 (MB)
+comment Running Surface Trimmer (V5)
+comment 	--in E:\User\Karl-Fredrik\Documents\GitHub\Image-stitching-with-COLMAP\COLMAP_w_CUDA\dense\0\meshed-poisson.ply
+comment 	--out E:\User\Karl-Fredrik\Documents\GitHub\Image-stitching-with-COLMAP\COLMAP_w_CUDA\dense\0\meshed-poisson.ply
+comment 	--trim 10.000000
+comment #Trimmed In:       0.0 (s)
+element vertex 0
+property float x
+property float y
+property float z
+property float value
+property uchar red
+property uchar green
+property uchar blue
+element face 0
+property list uchar int vertex_indices
+end_header

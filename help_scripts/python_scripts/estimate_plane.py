@@ -150,7 +150,7 @@ def compute_plane(pts):
 
     N = np.cross(AB, AC)
 
-    plane = [N[0],N[1],N[2],sum(np.multiply(-C, N))]
+    plane = [N[0], N[1], N[2], -(N[0]*A[0] + N[1]*A[1] + N[2]*A[2])]  # sum(np.multiply(-C, N))]
     return plane
 
 def residual_lengths_points_to_plane(pts, plane):

@@ -7,6 +7,7 @@ import os
 
 #Perform the reconstruction to get data
 automatic_reconstructor()
+stereo_fusion()
 cameras, points3D, images = get_data_from_binary()
 
 coordinates = []
@@ -16,8 +17,9 @@ for key in points3D:
     # ids.append(points[i].id)
 coordinates = np.asarray(coordinates)
 
+# print(cameras[1].params)
 #Estimate a floor plane
-plane,min_outlier = ransac_find_plane(coordinates,10)
+plane, min_outlier = ransac_find_plane(coordinates, 0.5)
 
 
 #Get all camera matrices
@@ -27,6 +29,7 @@ image_dir = '../COLMAP/images/'
 for key in images:
     imgs[key] = np.asarray(plt.imread(image_dir + images[key].name))
     all_camera_matrices[key] = camera_quat_to_P(images[key].qvec,images[key].tvec)
+
 
 #Get all camera intrinsics
 # print(cameras[1])
@@ -66,10 +69,10 @@ K_virt = K_temp
 w = int(K_virt[0,2]*2)
 h = int(K_virt[1,2]*2)
 #color image
-color_images,stitched_image = color_virtual_image(plane,Pv,w,h,imgs,all_camera_matrices,cameras,K_virt)
-print(color_images[1])
-stitched_image = stitched_image/255
+# color_images,stitched_image = color_virtual_image(plane,Pv,w,h,imgs,all_camera_matrices,cameras,K_virt)
+# print(color_images[1])
+# stitched_image = stitched_image/255
 # plt.figure(1)
-imgplot = plt.imshow(stitched_image)
+# imgplot = plt.imshow(stitched_image)
 plot_3D(points3D,plane,all_camera_matrices)
 # print(a,b,d)

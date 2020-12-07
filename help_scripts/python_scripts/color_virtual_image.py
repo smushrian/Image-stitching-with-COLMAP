@@ -149,3 +149,34 @@ def color_virtual_image(plane,Pvirtual,w_virtual,h_virtual,images,cams,intrinsic
     imgs = np.asarray(imgs)
     print(imgs.shape)
     return color_images, stitched_image
+
+
+def mean_color(color_images, w_virtual, h_virtual):
+    mean_color_matrix = np.zeros((h_virtual, w_virtual, 3))
+
+    c_im1 = color_images[1]
+    c_im2 = color_images[2]
+    c_im3 = color_images[3]
+    c_im4 = color_images[4]
+
+    c_im = [c_im1, c_im2, c_im3, c_im4]
+
+    for y in range(0, h_virtual):
+        for x in range(0, w_virtual):
+            im_arr = [c_im1[y, x, :], c_im2[y, x, :], c_im3[y, x, :], c_im4[y, x, :]]
+            i = 0
+            for c in im_arr:
+                c_sum = np.sum(c)
+
+                if np.isnan(c_sum):
+                    im_arr.pop(i)
+                    i = 0
+                else:
+                    i += 1
+
+            # mean_col = np.mean([c_im1[y, x, :], c_im2[y, x, :], c_im3[y, x, :], c_im4[y, x, :]], axis=0)
+            mean_col = np.mean(im_arr, axis=0)
+            print(mean_col)
+            mean_color_matrix[y, x] = mean_col
+
+    return mean_color_matrix
