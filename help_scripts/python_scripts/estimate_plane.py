@@ -79,32 +79,30 @@ def get_camera_center_and_axis(P):
     cam_center = P.nullspace()[0]
     principal_axis = P[2, :3]
     return np.asarray(cam_center), np.asarray(principal_axis)
+
+
 def ransac_find_plane(pts, threshold):
 # pts: Nx3, N 3D points
 # threshold: Scalar, threshold , threshold for points to be inliers
 # plane: 4x1, plane on the form ax + by + cz + d = 0
-
 
     if threshold == 0:
         print('Threshold = 0 may give false outliers due to machine precision errors')
 
     # Init
     N = len(pts)
-    epsilon = 0.4 # epsilon0
+    epsilon = 0.4  # epsilon0
 
-    mismatch_prob = 0.3 # eta
+    mismatch_prob = 0.3  # eta
 
-    kmax = math.log(mismatch_prob) / math.log(1 - math.pow(epsilon,3))
+    kmax = math.log(mismatch_prob) / math.log(1 - math.pow(epsilon, 3))
     min_outliers = N
     k = 1
 
     while k < kmax:
-        # for i = 1:kmax
-
-    #Select subset of points and calculate preliminary plane
-
-        subset = np.random.permutation(N)  # randomize 3 points
-        pts_prim = pts[subset[0:3],:3]
+        #Select subset of points and calculate preliminary plane
+        subset = np.random.randint(0, N, 4)  # randomize 3 points
+        pts_prim = pts[subset, :]
 
         plane_prel = compute_plane(pts_prim)
 
@@ -141,9 +139,9 @@ def compute_plane(pts):
     # pts: 3x3, 3 3D points of form 3x1
     # plane: 4x1, plane such that Ax + By + Cz + D = 0
 
-    A = pts[:, 0]
-    B = pts[:, 1]
-    C = pts[:, 2]
+    A = pts[0, :]
+    B = pts[1, :]
+    C = pts[2, :]
 
     AB = B - A
     AC = C - A
@@ -158,8 +156,10 @@ def residual_lengths_points_to_plane(pts, plane):
     #plane: 4x1 [a,b,c,d] such that ax+by+cz+d=0
     #residual_lengths: 1xN the minimum distance from all points to the plane
     N = len(pts[:, 0])
-    normal_vec = np.divide(plane[:3],math.sqrt(sum(np.power(plane[:3],2))))
-    residual_lengths = np.zeros([N,1])
+    normal_vec = np.divide(plane[:3], math.sqrt(sum(np.power(plane[:3], 2))))
+    residual_lengths = np.zeros(N)
+
+    # find a point on the plane
     if plane[0] != 0:
         P = [-plane[3]/plane[0], 0, 0]
     elif plane[1] != 0:
@@ -168,11 +168,14 @@ def residual_lengths_points_to_plane(pts, plane):
         P = [0, 0, -plane[3] / plane[2]]
     else:
         P = [0, 0, 0]
-    for i in range(0,N):
+
+    for i in range(0, N):
         #difference vector from plane to point
-        u = pts[i,:] - P
+        u = pts[i, :] - P
+
         #length of difference vector projected onto normal vector
-        residual_lengths[i] = abs(np.dot(u,normal_vec))
+        residual_lengths[i] = abs(np.dot(u, normal_vec))
+
     return residual_lengths
 
 def camera_quat_to_P(quat, t):
