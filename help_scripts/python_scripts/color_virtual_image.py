@@ -84,12 +84,12 @@ def get_color_for_3Dpoint_in_plane(plane_point, cams, images,image_w, image_h, i
         # undistort pixels
         # print(dist)
         pixels = pixelsFILM
-        pixels_dist = [0,0,1]
-        # pixels_dist = [pixels[0], pixels[1]]
-        pixels_dist[0] = pixels[0] * (1 + dist[0] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),2)
-                                 + dist[1] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),4))
-        pixels_dist[1] = pixels[1] * (1 + dist[0] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),2)
-                           + dist[1] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),4))
+        # pixels_dist = [0,0,1]
+        pixels_dist = [pixels[0], pixels[1], 1]
+        # pixels_dist[0] = pixels[0] * (1 + dist[0] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),2)
+        #                          + dist[1] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),4))
+        # pixels_dist[1] = pixels[1] * (1 + dist[0] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),2)
+        #                    + dist[1] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),4))
         # print('distpix',pixels_dist)
         pixels = np.matmul(K,pixels_dist)
         pixels = pixels/pixels[2]
@@ -159,7 +159,7 @@ def mean_color(color_images, w_virtual, h_virtual):
     c_im3 = color_images[3]
     c_im4 = color_images[4]
 
-    c_im = [c_im1, c_im2, c_im3, c_im4]
+    # c_im = [c_im1, c_im2, c_im3, c_im4]
 
     for y in range(0, h_virtual):
         for x in range(0, w_virtual):
@@ -180,3 +180,21 @@ def mean_color(color_images, w_virtual, h_virtual):
             mean_color_matrix[y, x] = mean_col
 
     return mean_color_matrix
+
+
+def compute_homography(P_virt, P_real, plane):
+    # Assuming distance to plane to be 1.
+    d = 1
+
+    R_virt = P_virt[:, 0, 3]
+    R_real = P_real[:, 0, 3]
+    t_virt = P_virt[:, 3]
+    t_real = P_real[:, 3]
+
+    R_real_transpose = R_real.transpose()
+    plane_norm = plane/plane[-1]
+    n = plane_norm[0:3]
+
+    H = R_virt*R_real_transpose - (-R_virt*R_real_transpose*t_real + t_virt)*n / d
+
+    return H
