@@ -44,7 +44,7 @@ from scipy.spatial.transform import Rotation as R
 #     return rad - math.pi
 
 
-def plot_3D(points,plane,all_cameras):
+def plot_3D(points,plane,all_cameras,cam_virt):
     dict_length = len(points)
     coordinates = []
     # ids = []
@@ -68,10 +68,12 @@ def plot_3D(points,plane,all_cameras):
     plt3d.scatter3D(xyz[:,0], xyz[:,1], xyz[:,2],  cmap='Greens')
     for key in all_cameras:
         cam_center, principal_axis = get_camera_center_and_axis(all_cameras[key]['P'])
+
         print(principal_axis[0,0])
         print(cam_center[1,0])
         plt3d.quiver(cam_center[0,0],cam_center[1,0],cam_center[2,0], principal_axis[0,0], principal_axis[0,1], principal_axis[0,2], length=2, color='r')
-
+    cam_center_virt, principal_axis_virt = get_camera_center_and_axis(cam_virt)
+    plt3d.quiver(cam_center_virt[0,0],cam_center_virt[1,0],cam_center_virt[2,0], principal_axis_virt[0,0], principal_axis_virt[0,1], principal_axis_virt[0,2], length=2, color='b')
     plt.show()
 
 def get_camera_center_and_axis(P):

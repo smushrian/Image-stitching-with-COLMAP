@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from help_scripts.python_scripts import COLMAP_functions
+from help_scripts.python_scripts import estimate_plane
 from sympy import Matrix
 
 def line_from_pixel(pixelpoint,P,K):
@@ -38,7 +39,7 @@ def line_from_pixel(pixelpoint,P,K):
     t = P[0:3,3]
     C = -np.matmul(np.transpose(R),t)
     line_point = np.transpose(C)
-    vec_len = math.sqrt(math.pow((x - cx),2) + math.pow((y - cy),2) +math.pow(f,2));
+    vec_len = math.sqrt(math.pow((x - cx),2) + math.pow((y - cy),2) +math.pow(f,2))
     line_dir = np.transpose((C + np.matmul(np.transpose(R),np.asarray([x-cx, y-cy, f])/vec_len))) - np.transpose(C) # unit vec
     # print('line_dir',line_dir)
     # print('line_point',line_point)
@@ -85,11 +86,11 @@ def get_color_for_3Dpoint_in_plane(plane_point, cams, images,image_w, image_h, i
         # print(dist)
         pixels = pixelsFILM
         pixels_dist = [0,0,1]
-        # pixels_dist = [pixels[0], pixels[1]]
-        pixels_dist[0] = pixels[0] * (1 + dist[0] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),2)
-                                 + dist[1] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),4))
-        pixels_dist[1] = pixels[1] * (1 + dist[0] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),2)
-                           + dist[1] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),4))
+        pixels_dist = [pixels[0], pixels[1],1]
+        # pixels_dist[0] = pixels[0] * (1 + dist[0] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),2)
+        #                          + dist[1] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),4))
+        # pixels_dist[1] = pixels[1] * (1 + dist[0] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),2)
+        #                    + dist[1] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),4))
         # print('distpix',pixels_dist)
         pixels = np.matmul(K,pixels_dist)
         pixels = pixels/pixels[2]
@@ -104,7 +105,7 @@ def get_color_for_3Dpoint_in_plane(plane_point, cams, images,image_w, image_h, i
         # print('w',w-1)
         # print('h',h-1)
         # print('bool', pix_x >= w - 1)
-        if pix_x >= w-1 or pix_x < 0 or pix_y >= h-1 or pix_y < 0:
+        if pix_x >= w or pix_x < 0 or pix_y >= h or pix_y < 0:
             color = [None, None, None]
             colors.append(color)
      # elif pixels[1] > image_h or pixels[1] > 0:
@@ -133,7 +134,7 @@ def color_virtual_image(plane,Pvirtual,w_virtual,h_virtual,images,cams,intrinsic
                     3: np.zeros((h_virtual, w_virtual,  3)), 4: np.zeros((h_virtual, w_virtual,  3))}
     stitched_image = np.zeros((h_virtual,w_virtual, 3))
     for y in range(0,h_virtual):
-        # print('Loop is on: ',y)
+        print('Loop is on: ',y)
         for x in range(0, w_virtual):
             color = get_color_for_virtual_pixel(images, Pvirtual, [x, y], plane,cams,intrinsics,w_virtual,h_virtual,K_virt)
             color_images[1][y, x, :] = color[0]
@@ -180,3 +181,33 @@ def mean_color(color_images, w_virtual, h_virtual):
             mean_color_matrix[y, x] = mean_col
 
     return mean_color_matrix
+
+def create_virtual_camera(camera_matrices):
+    centers = {}
+    axes = {}
+    for index,cam in enumerate(camera_matrices):
+        cam_center, principal_axis = estimate_plane.get_camera_center_and_axis(camera_matrices[cam]['P'])
+        centers[index] = cam_center
+        axes[index] = principal_axis
+    virt_center = (centers[0]+centers[1]+centers[2]+centers[3])/4
+    virt_principal_axis = (axes[0]+axes[1]+axes[2]+axes[3])/4
+
+    x = np.array([1, 0, 0])
+    y = np.array([0, 1, 0])
+
+    xnew = np.cross(x,np.asarray(virt_principal_axis))
+    normx = math.sqrt(math.pow(xnew[0][0],2) + math.pow(xnew[0][1],2) + math.pow(xnew[0][2],2))
+    xnew = xnew/normx
+
+    ynew = np.cross(y,virt_principal_axis)
+    normy = math.sqrt(math.pow(ynew[0][0],2) + math.pow(ynew[0][1],2) + math.pow(ynew[0][2],2))
+    ynew = ynew/normy
+
+    Rvirt = np.asarray([[xnew[0][0], xnew[0][1], xnew[0][2]],[ynew[0][0], ynew[0][1], ynew[0][2]],
+                        [virt_principal_axis[0][0],virt_principal_axis[0][1],virt_principal_axis[0][2]]])
+
+    tvirt = np.matmul(-Rvirt,np.asarray([virt_center[0][0],virt_center[1][0],virt_center[2][0]]))
+
+    Pvirt = np.column_stack((Rvirt,tvirt))
+
+    return Pvirt

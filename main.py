@@ -19,7 +19,7 @@ coordinates = np.asarray(coordinates)
 
 # print(cameras[1].params)
 #Estimate a floor plane
-plane, min_outlier = ransac_find_plane(coordinates, 0.5)
+plane, min_outlier = ransac_find_plane(coordinates, 0.01)
 
 
 #Get all camera matrices
@@ -32,7 +32,7 @@ for key in images:
 
 
 #Get all camera intrinsics
-# print(cameras[1])
+print(cameras[1])
 # K_matrices = {}
 # for key in cameras:
 #     K_matrices[key] = build_intrinsic_matrix(cameras[key])
@@ -43,14 +43,17 @@ for key in images:
 # for key in all_camera_matrices:
 
 #define virtual camera
+
 # Rv = np.eye(3)
 # tv = np.asarray([1, 1, 1])
 # Pv = np.column_stack((Rv,tv))
 # #define virtual image size
 # w = 480
-# h = 360
+# h = 240
 # f = 1
 # K_virt = np.asarray([[f, 0, w/2],[0, f, h/2],[0, 0, 1]])
+# Pv = create_virtual_camera(all_camera_matrices)
+# print(Pv)
 #POSSIBLE VIRT CAMERA CENTER:
 # Rv = np.asarray([[ 0.7810,-0.0492,-0.6226],
 #          [-0.0057, 0.9963,-0.0858],
@@ -63,16 +66,19 @@ for key in images:
 # f = 1
 # K_virt = np.asarray([[f, 0, w/2],[0, f, h/2],[0, 0, 1]])
 #TEST WITH EXISTING CAMERA
-K_temp,dist_temp = build_intrinsic_matrix(cameras[1])
-Pv = all_camera_matrices[1]['P']
+K_temp,dist_temp = build_intrinsic_matrix(cameras[3])
+Pv = all_camera_matrices[3]['P']
 K_virt = K_temp
 w = int(K_virt[0,2]*2)
 h = int(K_virt[1,2]*2)
+print('pic width: ',w)
+print('pic height: ',h)
+
 #color image
-# color_images,stitched_image = color_virtual_image(plane,Pv,w,h,imgs,all_camera_matrices,cameras,K_virt)
+color_images,stitched_image = color_virtual_image(plane,Pv,w,h,imgs,all_camera_matrices,cameras,K_virt)
 # print(color_images[1])
-# stitched_image = stitched_image/255
+stitched_image = stitched_image/255
 # plt.figure(1)
-# imgplot = plt.imshow(stitched_image)
-plot_3D(points3D,plane,all_camera_matrices)
+imgplot = plt.imshow(stitched_image)
+plot_3D(points3D,plane,all_camera_matrices,Pv)
 # print(a,b,d)

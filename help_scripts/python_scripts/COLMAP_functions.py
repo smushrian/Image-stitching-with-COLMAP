@@ -39,7 +39,7 @@ def automatic_reconstructor():
               --camera_model RADIAL ' +
             '--workspace_path ' + workspace_path +
             ' --image_path ' + image_path +
-              ' --dense 1 ' +
+              ' --dense 0 ' +
               '--use_gpu 0 ')
     return
 
@@ -66,13 +66,25 @@ def get_data_from_binary():
     return cameras, points3D, images
 
 def build_intrinsic_matrix(camera):
-    params = camera.params
-    # K = [f, 0, cx;
-    #      0, f, cy;
-    #      0, 0, 1];
-    K = np.asarray([[params[0], 0, params[1]],[0, params[0], params[2]],[0, 0, 1]])
-    # print('params',params)
-    dist_params = [params[3], 0]
+    if camera.model == 'RADIAL':
+        params = camera.params
+        # K = [f, 0, cx;
+        #      0, f, cy;
+        #      0, 0, 1];
+        K = np.asarray([[params[0], 0, params[1]],[0, params[0], params[2]],[0, 0, 1]])
+        # print('params',params)
+        dist_params = [params[3], params[4]]
+    elif camera.model == 'PINHOLE':
+        params = camera.params
+        # K = [f, 0, cx;
+        #      0, f, cy;
+        #      0, 0, 1];
+        K = np.asarray([[params[0], 0, params[2]], [0, params[1], params[3]], [0, 0, 1]])
+        dist_params = [1, 1]
+    else:
+        K = 1
+        dist_params = 1
+        print('Camera model must be either RADIAL or PINHOLE')
     return K, dist_params
 
 def stereo_fusion():
