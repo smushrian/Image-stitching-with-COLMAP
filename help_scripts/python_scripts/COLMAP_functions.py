@@ -49,7 +49,7 @@ def get_data_from_binary():
     # os.chdir('..')
     # dirname = os.path.dirname(__file__)
     dirname = os.getcwd()
-    print(dirname)
+    # print(dirname)
     database_path = dirname + '/database.db'
     # camera_path = dirname + '/dense/0/den/cameras.bin'
     # points_path = dirname + '/dense/0/den/points3D.bin'
@@ -87,11 +87,12 @@ def build_intrinsic_matrix(camera):
         print('Camera model must be either RADIAL or PINHOLE')
     return K, dist_params
 
+
 def stereo_fusion():
     project_path = os.getcwd()
     workspace_path = project_path + '/dense/0'
-    print(workspace_path)
-    print('Här')
+    # print(workspace_path)
+    # print('Här')
     output_path = workspace_path + '/..'
     os.system('colmap stereo_fusion \
                  --output_type bin ' +

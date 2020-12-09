@@ -160,7 +160,7 @@ def mean_color(color_images, w_virtual, h_virtual):
     c_im3 = color_images[3]
     c_im4 = color_images[4]
 
-    c_im = [c_im1, c_im2, c_im3, c_im4]
+    # c_im = [c_im1, c_im2, c_im3, c_im4]
 
     for y in range(0, h_virtual):
         for x in range(0, w_virtual):
@@ -211,3 +211,20 @@ def create_virtual_camera(camera_matrices):
     Pvirt = np.column_stack((Rvirt,tvirt))
 
     return Pvirt
+
+def compute_homography(P_virt, P_real, plane):
+    # Assuming distance to plane to be 1.
+    d = 1
+
+    R_virt = P_virt[:, 0, 3]
+    R_real = P_real[:, 0, 3]
+    t_virt = P_virt[:, 3]
+    t_real = P_real[:, 3]
+
+    R_real_transpose = R_real.transpose()
+    plane_norm = plane/plane[-1]
+    n = plane_norm[0:3]
+
+    H = R_virt*R_real_transpose - (-R_virt*R_real_transpose*t_real + t_virt)*n / d
+
+    return H
