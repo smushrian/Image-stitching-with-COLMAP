@@ -114,21 +114,29 @@ def color_virtual_image(plane,Pvirtual,w_virtual,h_virtual,images,cams,intrinsic
         imgs = np.asarray(imgs)
         print(imgs.shape)
         return color_images, stitched_image
+
     elif decision_variable == 'homography':
         color_images = {1: np.zeros((h_virtual, w_virtual, 3)), 2: np.zeros((h_virtual, w_virtual, 3)),
                         3: np.zeros((h_virtual, w_virtual, 3)), 4: np.zeros((h_virtual, w_virtual, 3))}
         stitched_image = np.zeros((h_virtual, w_virtual, 3))
-        for y in range(0,h_virtual):
-            print('Loop is on: ',y)
+        for y in range(0, h_virtual):
+            print('Loop is on: ', y)
             for x in range(0, w_virtual):
-                image_point = np.matmul(H,np.asarray([x,y,1]))
-                color_images[1][y, x, :] = images[0][y,x]
-                color_images[2][y, x, :] = images[1][y,x]
-                color_images[3][y, x, :] = images[2][y,x]
-                color_images[4][y, x, :] = images[3][y,x]
-                for i in range(0,4):
-                    if color_images[i][y,x,0] is not None:
-                        stitched_image[y,x,:] = color[i]
+                for index in H:
+                    image_point = np.matmul(H[index], np.asarray([x, y, 1]))
+                    image_point = image_point / image_point[-1]
+                    pix_x = int(image_point[0])
+                    pix_y = int(image_point[1])
+
+                    if pix_x >= w_virtual or pix_x < 0 or pix_y >= h_virtual or pix_y < 0:
+                        color_images[index][y, x, :] = [None, None, None]
+                    else:
+                        color_images[index][y, x, :] = images[index][pix_y, pix_x]
+
+                    if color_images[index][y, x, 0] is not None:
+                        stitched_image[y, x, :] = color_images[index][y, x, :]
+        return color_images, stitched_image
+
     else:
         print('A decision variable with either "ray_tracing" or "homography" must be passed as argument.')
 
@@ -195,18 +203,32 @@ def create_virtual_camera(camera_matrices):
     return Pvirt
 
 def compute_homography(P_virt, P_real, plane):
-    # Assuming distance to plane to be 1.
-    d = 1
-
+    # Determine rotational matrices and translation vectors:
     R_virt = P_virt[:3, :3]
     R_real = P_real[:3, :3]
     t_virt = P_virt[:3, 3]
     t_real = P_real[:3, 3]
 
-    R_real_transpose = R_real.transpose()
-    plane_norm = plane/plane[-1]
-    n = plane_norm[0:3]
+    # Rotation matrix transpose:
+    # R_real_transpose = R_real.transpose()
+    R_virt_transpose = R_virt.transpose()
 
-    H = R_virt*R_real_transpose - (-R_virt*R_real_transpose*t_real + t_virt)*n / d
+    # Camera center:
+    cam_center = np.matmul(-np.linalg.inv(R_virt), t_virt)
+    # cam_center = np.divide(cam_center, cam_center[-1])
+
+    # Compute distance between point and plane:
+    num = abs((plane[0] * cam_center[0] + plane[1] * cam_center[1] + plane[2] * cam_center[2] + plane[3]))
+    den = (math.sqrt(cam_center[0] * cam_center[0] + cam_center[1] * cam_center[1] + cam_center[2] * cam_center[2]))
+    d = num / den
+
+    # Normalize plane:
+    # plane_norm = np.divide(plane, plane[-1])
+    n = np.asarray(plane[0:3])
+    n_transpose = n.transpose()
+
+    # Compute homography:
+    # H = np.matmul(R_virt, R_real_transpose) - np.matmul((np.matmul(np.matmul(-R_virt, R_real_transpose), t_real) + t_virt), n_transpose) / d
+    H = np.matmul(R_real, R_virt_transpose) - np.matmul((np.matmul(np.matmul(-R_real, R_virt_transpose), t_virt) + t_real), n_transpose) / d
 
     return H

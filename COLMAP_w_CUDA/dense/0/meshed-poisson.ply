@@ -7,11 +7,11 @@ comment --out E:\User\Karl-Fredrik\Documents\GitHub\Image-stitching-with-COLMAP\
 comment --pointWeight 1.000000
 comment --density
 comment --color 32.000000
-comment #             Tree set in:       0.1 (s),     564.5 (MB)
-comment #      Constraints set in:       0.2 (s),     572.7 (MB)
-comment # Linear system solved in:       0.7 (s),     570.5 (MB)
-comment #        Got triangles in:       0.2 (s),     531.3 (MB)
-comment #             Total Solve:       1.3 (s),     572.7 (MB)
+comment #             Tree set in:       0.1 (s),     634.4 (MB)
+comment #      Constraints set in:       0.2 (s),     642.7 (MB)
+comment # Linear system solved in:       0.9 (s),     645.2 (MB)
+comment #        Got triangles in:       0.3 (s),     646.0 (MB)
+comment #             Total Solve:       1.6 (s),     646.0 (MB)
 comment Running Surface Trimmer (V5)
 comment 	--in E:\User\Karl-Fredrik\Documents\GitHub\Image-stitching-with-COLMAP\COLMAP_w_CUDA\dense\0\meshed-poisson.ply
 comment 	--out E:\User\Karl-Fredrik\Documents\GitHub\Image-stitching-with-COLMAP\COLMAP_w_CUDA\dense\0\meshed-poisson.ply

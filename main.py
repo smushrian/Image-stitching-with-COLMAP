@@ -8,7 +8,7 @@ import os
 # Perform the reconstruction to get data
 automatic_reconstructor()
 image_undistorter()
-# stereo_fusion()
+stereo_fusion()
 
 cameras, points3D, images = get_data_from_binary()
 print(points3D)
@@ -30,25 +30,30 @@ for key in images:
     all_camera_matrices[images[key].camera_id] = camera_quat_to_P(images[key].qvec, images[key].tvec)
 
 # POSSIBLE VIRT CAMERA CENTER:
-Pv  = create_virtual_camera(all_camera_matrices)
-# # print(Pv)
-w = 100
-h = 100
-f = 75
-K_virt = np.asarray([[f, 0, w/2],[0, f, h/2],[0, 0, 1]])
-# TEST HOMOGRAPHY
-# H = compute_homography(Pv, all_camera_matrices[1]['P'], plane)
-# print('Homography = ', H)
+# Pv = create_virtual_camera(all_camera_matrices)
+# # # print(Pv)
+# w = 100
+# h = 100
+# f = 75
+# K_virt = np.asarray([[f, 0, w/2],[0, f, h/2],[0, 0, 1]])
 
 # TEST WITH EXISTING CAMERA
-# K_temp, dist_temp = build_intrinsic_matrix(cameras[2])
-# Pv = all_camera_matrices[2]['P']
-# K_virt = K_temp
-# w = int(K_virt[0, 2]*2)
-# h = int(K_virt[1, 2]*2)
-H=1
+K_temp, dist_temp = build_intrinsic_matrix(cameras[2])
+Pv = all_camera_matrices[2]['P']
+K_virt = K_temp
+w = int(K_virt[0, 2]*2)
+h = int(K_virt[1, 2]*2)
+
+# TEST HOMOGRAPHY 2.0
+H = {}
+
+for key in all_camera_matrices:
+    H[key] = compute_homography(Pv, all_camera_matrices[key]['P'], plane)
+
+# print('Homography: ', H)
+# H=1
 # color image
-color_images, stitched_image = color_virtual_image(plane, Pv, w, h, imgs, all_camera_matrices, cameras, K_virt,'ray_tracing',h)
+color_images, stitched_image = color_virtual_image(plane, Pv, w, h, imgs, all_camera_matrices, cameras, K_virt,'homography',H)
 stitched_image = stitched_image/255
 imgplot = plt.imshow(stitched_image)
 plt3d = plot_3D(points3D,plane,all_camera_matrices,Pv)

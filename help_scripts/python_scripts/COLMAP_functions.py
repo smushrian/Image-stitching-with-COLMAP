@@ -39,7 +39,7 @@ def automatic_reconstructor():
               --camera_model SIMPLE_RADIAL ' +
             '--workspace_path ' + workspace_path +
             ' --image_path ' + image_path +
-              ' --dense 0 ' +
+              ' --dense 1 ' +
               '--use_gpu 0 ')
     return
 
