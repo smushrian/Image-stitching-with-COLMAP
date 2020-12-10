@@ -36,7 +36,7 @@ def automatic_reconstructor():
     workspace_path = os.getcwd()
     image_path = workspace_path + '/images'
     os.system('colmap automatic_reconstructor \
-              --camera_model RADIAL ' +
+              --camera_model SIMPLE_RADIAL ' +
             '--workspace_path ' + workspace_path +
             ' --image_path ' + image_path +
               ' --dense 0 ' +
@@ -54,37 +54,36 @@ def get_data_from_binary():
     # camera_path = dirname + '/dense/0/den/cameras.bin'
     # points_path = dirname + '/dense/0/den/points3D.bin'
     # images_path = dirname + '/dense/0/den/images.bin'
-    camera_path = dirname + '/dense/cameras.bin'
-    points_path = dirname + '/dense/points3D.bin'
-    images_path = dirname + '/dense/images.bin'
-    # camera_path = dirname + '/sparse/0/cameras.bin'
-    # points_path = dirname + '/sparse/0/points3D.bin'
-    # images_path = dirname + '/sparse/0/images.bin'
+    # camera_path = dirname + '/dense/cameras.bin'
+    # points_path = dirname + '/dense/points3D.bin'
+    # images_path = dirname + '/dense/images.bin'
+    camera_path = dirname + '/sparse/0/cameras.bin'
+    points_path = dirname + '/sparse/0/points3D.bin'
+    images_path = dirname + '/sparse/0/images.bin'
     cameras = read_write_model.read_cameras_binary(camera_path)
     points3D = read_write_model.read_points3d_binary(points_path)
     images = read_write_model.read_images_binary(images_path)
     return cameras, points3D, images
 
 def build_intrinsic_matrix(camera):
-    if camera.model == 'RADIAL':
+    if camera.model == 'SIMPLE_RADIAL':
         params = camera.params
         # K = [f, 0, cx;
         #      0, f, cy;
         #      0, 0, 1];
         K = np.asarray([[params[0], 0, params[1]],[0, params[0], params[2]],[0, 0, 1]])
-        # print('params',params)
-        dist_params = [params[3], params[4]]
+        dist_params = [params[3],0]
     elif camera.model == 'PINHOLE':
         params = camera.params
         # K = [f, 0, cx;
         #      0, f, cy;
         #      0, 0, 1];
         K = np.asarray([[params[0], 0, params[2]], [0, params[1], params[3]], [0, 0, 1]])
-        dist_params = [1, 1]
+        dist_params = [0, 0]
     else:
         K = 1
         dist_params = 1
-        print('Camera model must be either RADIAL or PINHOLE')
+        print('Camera model must be either SIMPLE_RADIAL or PINHOLE')
     return K, dist_params
 
 
@@ -101,4 +100,22 @@ def stereo_fusion():
               ' --workspace_path ' + workspace_path) # +
               # '--workspace_format COLMAP ' +
               # '--input_type geometric ')
+
+def image_undistorter():
+    project_path = os.getcwd()
+    workspace_path = project_path + '/dense/0'
+    input_path = project_path + '/sparse/0'
+    image_path = project_path + '/images'
+    # print(workspace_path)
+    # print('Här')
+    output_path = workspace_path #+ '/..'
+    os.system('colmap image_undistorter \
+              --output_path ' + output_path +
+              # ' --project_path ' + project_path +
+              ' --image_path ' + image_path +
+              ' --output_type COLMAP ' +
+              '--input_path ' + input_path +
+              ' --max_image_size 2000')
+    # '--workspace_format COLMAP ' +
+    # '--input_type geometric ')
 

@@ -7,79 +7,58 @@ import os
 
 # Perform the reconstruction to get data
 automatic_reconstructor()
-stereo_fusion()
-cameras, points3D, images = get_data_from_binary()
+image_undistorter()
+# stereo_fusion()
 
+cameras, points3D, images = get_data_from_binary()
+print(points3D)
 coordinates = []
 for key in points3D:
-    # print(point)
     coordinates.append(points3D[key].xyz)
-    # ids.append(points[i].id)
 coordinates = np.asarray(coordinates)
 
-# print(cameras[1].params)
 #Estimate a floor plane
-plane, min_outlier = ransac_find_plane(coordinates, 0.01)
+plane, min_outlier = ransac_find_plane(coordinates, 0.3)
 
-
-# Get all camera matrices
+# Get all camera matrices and images
 all_camera_matrices = {}
 imgs = {}
 image_dir = '../COLMAP_w_CUDA/images/'
 for key in images:
+    print(images[key].camera_id)
     imgs[key] = np.asarray(plt.imread(image_dir + images[key].name))
-    all_camera_matrices[key] = camera_quat_to_P(images[key].qvec, images[key].tvec)
+    all_camera_matrices[images[key].camera_id] = camera_quat_to_P(images[key].qvec, images[key].tvec)
 
-
-# Get all camera intrinsics
-# print(cameras[1])
-# K_matrices = {}
-# for key in cameras:
-#     K_matrices[key] = build_intrinsic_matrix(cameras[key])
-#     print(cameras[key].params)
-
-# calculate a point in the middle of all cameras
-# c1 =
-# for key in all_camera_matrices:
-
-# define virtual camera
-# Rv = np.eye(3)
-# tv = np.asarray([1, 1, 1])
-# Pv = np.column_stack((Rv,tv))
-# #define virtual image size
-# w = 480
-# h = 240
-# f = 1
-# K_virt = np.asarray([[f, 0, w/2],[0, f, h/2],[0, 0, 1]])
 # POSSIBLE VIRT CAMERA CENTER:
-Rv = np.asarray([[0.7810, -0.0492, -0.6226],
-                 [-0.0057, 0.9963, -0.0858],
-                 [0.6245, 0.0706, 0.7778]])
-
-tv = np.asarray([-1.5546, -1.3919, 2.1106])
-Pv = np.column_stack((Rv, tv))
-# w = 1280
-# h = 720
-# f = 1
-# K_virt = np.asarray([[f, 0, w/2],[0, f, h/2],[0, 0, 1]])
-print('P_virt = ', Pv)
-
+Pv  = create_virtual_camera(all_camera_matrices)
+# # print(Pv)
+w = 100
+h = 100
+f = 75
+K_virt = np.asarray([[f, 0, w/2],[0, f, h/2],[0, 0, 1]])
 # TEST HOMOGRAPHY
-H = compute_homography(Pv, all_camera_matrices[1]['P'], plane)
-print('Homography = ', H)
+# H = compute_homography(Pv, all_camera_matrices[1]['P'], plane)
+# print('Homography = ', H)
 
 # TEST WITH EXISTING CAMERA
-K_temp, dist_temp = build_intrinsic_matrix(cameras[2])
-Pv = all_camera_matrices[2]['P']
-print('Camera matrices: ', all_camera_matrices)
-K_virt = K_temp
-w = int(K_virt[0, 2]*2)
-h = int(K_virt[1, 2]*2)
+# K_temp, dist_temp = build_intrinsic_matrix(cameras[2])
+# Pv = all_camera_matrices[2]['P']
+# K_virt = K_temp
+# w = int(K_virt[0, 2]*2)
+# h = int(K_virt[1, 2]*2)
+H=1
 # color image
-color_images, stitched_image = color_virtual_image(plane, Pv, w, h, imgs, all_camera_matrices, cameras, K_virt)
-# print(color_images[1])
+color_images, stitched_image = color_virtual_image(plane, Pv, w, h, imgs, all_camera_matrices, cameras, K_virt,'ray_tracing',h)
 stitched_image = stitched_image/255
-# plt.figure(1)
 imgplot = plt.imshow(stitched_image)
-plot_3D(points3D,plane,all_camera_matrices,Pv)
-# print(a,b,d)
+plt3d = plot_3D(points3D,plane,all_camera_matrices,Pv)
+
+
+# Test for visualizing the projection of a virtual pixel to the plane
+# pixelpoint = [0,0]
+# line_dir,line_point = line_from_pixel(pixelpoint,Pv,K_virt)
+# intersection_point = intersection_line_plane(line_dir,line_point,plane)
+# plt3d.scatter3D(intersection_point[0], intersection_point[1], intersection_point[2],  cmap='Blues')
+# plt3d.quiver(line_point[0],line_point[1],line_point[2], line_dir[0], line_dir[1], line_dir[2], length=20, color='y')
+plt.show()
+

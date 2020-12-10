@@ -74,7 +74,8 @@ def plot_3D(points,plane,all_cameras,cam_virt):
         plt3d.quiver(cam_center[0,0],cam_center[1,0],cam_center[2,0], principal_axis[0,0], principal_axis[0,1], principal_axis[0,2], length=2, color='r')
     cam_center_virt, principal_axis_virt = get_camera_center_and_axis(cam_virt)
     plt3d.quiver(cam_center_virt[0,0],cam_center_virt[1,0],cam_center_virt[2,0], principal_axis_virt[0,0], principal_axis_virt[0,1], principal_axis_virt[0,2], length=2, color='b')
-    plt.show()
+    #plt.show()
+    return plt3d
 
 def get_camera_center_and_axis(P):
     P = Matrix(P)
@@ -130,7 +131,7 @@ def ransac_find_plane(pts, threshold):
             plane = plane_prel
             min_outliers = outliers
             print('Total # of iterations was ' + str(k) + ' with 0% outliers.')
-            return
+            return plane, min_outliers
 
         k = k + 1
 
