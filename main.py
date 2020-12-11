@@ -18,42 +18,46 @@ for key in points3D:
 coordinates = np.asarray(coordinates)
 
 #Estimate a floor plane
-plane, min_outlier = ransac_find_plane(coordinates, 0.3)
+plane, min_outlier = ransac_find_plane(coordinates, 0.01)
 
 # Get all camera matrices and images
+camera_intrinsics = {}
 all_camera_matrices = {}
 imgs = {}
-image_dir = '../COLMAP_w_CUDA/images/'
-for key in images:
-    print(images[key].camera_id)
-    imgs[key] = np.asarray(plt.imread(image_dir + images[key].name))
-    all_camera_matrices[images[key].camera_id] = camera_quat_to_P(images[key].qvec, images[key].tvec)
+# image_dir = '../COLMAP_w_CUDA/images/'
+image_dir = '../COLMAP_w_CUDA/dense/0/images/'
 
+for key in images:
+    print('key, name',key,images[key].name)
+    imgs[images[key].camera_id] = np.asarray(plt.imread(image_dir + images[key].name))
+    all_camera_matrices[images[key].camera_id] = camera_quat_to_P(images[images[key].camera_id].qvec, images[images[key].camera_id].tvec)
+    camera_intrinsics[images[key].camera_id] = cameras[key]
 # POSSIBLE VIRT CAMERA CENTER:
 # Pv = create_virtual_camera(all_camera_matrices)
 # # # print(Pv)
-# w = 100
-# h = 100
-# f = 75
+# w = 200
+# h = 200
+# f = 100
 # K_virt = np.asarray([[f, 0, w/2],[0, f, h/2],[0, 0, 1]])
 
 # TEST WITH EXISTING CAMERA
-K_temp, dist_temp = build_intrinsic_matrix(cameras[2])
-Pv = all_camera_matrices[2]['P']
+K_temp, dist_temp = build_intrinsic_matrix(camera_intrinsics[2])
+Pv = all_camera_matrices[1]['P']
 K_virt = K_temp
 w = int(K_virt[0, 2]*2)
 h = int(K_virt[1, 2]*2)
 
 # TEST HOMOGRAPHY 2.0
 H = {}
-
+#
 for key in all_camera_matrices:
+    print(key)
     H[key] = compute_homography(Pv, all_camera_matrices[key]['P'], plane)
 
-# print('Homography: ', H)
+print('Homography: ', H)
 # H=1
 # color image
-color_images, stitched_image = color_virtual_image(plane, Pv, w, h, imgs, all_camera_matrices, cameras, K_virt,'homography',H)
+color_images, stitched_image = color_virtual_image(plane, Pv, w, h, imgs, all_camera_matrices, camera_intrinsics, K_virt,'homography',H)
 stitched_image = stitched_image/255
 imgplot = plt.imshow(stitched_image)
 plt3d = plot_3D(points3D,plane,all_camera_matrices,Pv)

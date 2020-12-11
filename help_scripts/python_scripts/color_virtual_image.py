@@ -119,22 +119,33 @@ def color_virtual_image(plane,Pvirtual,w_virtual,h_virtual,images,cams,intrinsic
         color_images = {1: np.zeros((h_virtual, w_virtual, 3)), 2: np.zeros((h_virtual, w_virtual, 3)),
                         3: np.zeros((h_virtual, w_virtual, 3)), 4: np.zeros((h_virtual, w_virtual, 3))}
         stitched_image = np.zeros((h_virtual, w_virtual, 3))
+        K = {}
+        dist = {}
+        for key in cams:
+            Ktemp, disttemp = COLMAP_functions.build_intrinsic_matrix(intrinsics[key])
+            K[key] = Ktemp
+            dist[key] = disttemp
         for y in range(0, h_virtual):
             print('Loop is on: ', y)
             for x in range(0, w_virtual):
                 for index in H:
-                    image_point = np.matmul(H[index], np.asarray([x, y, 1]))
+                    # print('index',index)
+                    pixel = [x, y, 1]
+                    # pixel_norm = np.matmul(np.linalg.inv(K_virt),np.asarray(pixel))
+                    image_point = np.matmul(H[index], pixel)
+                    # image_point = np.matmul(K[index],image_point) / image_point[-1]
                     image_point = image_point / image_point[-1]
                     pix_x = int(image_point[0])
                     pix_y = int(image_point[1])
-
+                    # print('pixx',pix_x)
+                    # print('pixy', pix_y)
+                    # print('w and h',w_virtual,h_virtual)
                     if pix_x >= w_virtual or pix_x < 0 or pix_y >= h_virtual or pix_y < 0:
-                        color_images[index][y, x, :] = [None, None, None]
+                        color_images[index][y, x, :3] = [None, None, None]
                     else:
-                        color_images[index][y, x, :] = images[index][pix_y, pix_x]
-
-                    if color_images[index][y, x, 0] is not None:
-                        stitched_image[y, x, :] = color_images[index][y, x, :]
+                        color_images[index][y, x, :3] = images[index][pix_y, pix_x,:3]
+                    # if color_images[index][y, x, 0] is not None:
+                        stitched_image[y, x, :3] = color_images[index][y, x, :3]
         return color_images, stitched_image
 
     else:
