@@ -1,47 +1,8 @@
-
 import numpy as np
 import math
-
-# from sklearn import linear_model
-# import open3d as o3d
-
 import matplotlib.pyplot as plt
-# from mpl_toolkits.mplot3d import Axes3D
 from sympy import Matrix
 from scipy.spatial.transform import Rotation as R
-
-# def find_plane(points):
-#     # {1: Point3D(id=1, xyz=array([4.62656199, -0.45836651, 18.59784168]), rgb=array([12, 16, 19]),
-#                 # error=array(2.15046715), image_ids=array([1, 2]), point2D_idxs=array([0, 1])),}
-#     # dict_length = len(points)
-#     coordinates = []
-#     ids = []
-#     # for i in range(0,dict_length):
-#     for key in points:
-#         # print(point)
-#         coordinates.append(points[key].xyz)
-#         ids.append(points[key].id)
-#
-#     xyz = np.asarray(coordinates)
-#
-#     XY = xyz[:, :2]
-#     Z = xyz[:, 2]
-#     ransac = linear_model.RANSACRegressor(linear_model.LinearRegression(),residual_threshold=0.1)
-#
-#     ransac.fit(XY, Z)
-#     a, b = ransac.estimator_.coef_  # 係数
-#     d = ransac.estimator_.intercept_  # 切片
-#
-#     return a, b, d  # Z = aX + bY + d
-#
-#
-# def angle_rotate(a, b, d):
-#     x = np.arange(30)
-#     y = np.arange(30)
-#     X, Y = np.meshgrid(x, y)
-#     Z = a * X + b * Y + d
-#     rad = math.atan2(Y[1][0] - Y[0][0], (Z[1][0] - Z[0][0]))
-#     return rad - math.pi
 
 
 def plot_3D(points,plane,all_cameras,cam_virt):
@@ -68,9 +29,6 @@ def plot_3D(points,plane,all_cameras,cam_virt):
     plt3d.scatter3D(xyz[:,0], xyz[:,1], xyz[:,2],  cmap='Greens')
     for key in all_cameras:
         cam_center, principal_axis = get_camera_center_and_axis(all_cameras[key]['P'])
-
-        print(principal_axis[0,0])
-        print(cam_center[1,0])
         plt3d.quiver(cam_center[0,0],cam_center[1,0],cam_center[2,0], principal_axis[0,0], principal_axis[0,1], principal_axis[0,2], length=2, color='r')
     cam_center_virt, principal_axis_virt = get_camera_center_and_axis(cam_virt)
     plt3d.quiver(cam_center_virt[0,0],cam_center_virt[1,0],cam_center_virt[2,0], principal_axis_virt[0,0], principal_axis_virt[0,1], principal_axis_virt[0,2], length=2, color='b')

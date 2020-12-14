@@ -80,48 +80,52 @@ def get_color_for_3Dpoint_in_plane(plane_point, cams, images,image_w, image_h, i
 def get_color_for_virtual_pixel(images,Pvirtual,pixelpoint,plane, cams,intrinsics,w_virtual,h_virtual,K_virt):
     #get the ray corresponding to a pixel in virtual camera
     line,line_point = line_from_pixel(pixelpoint,Pvirtual,K_virt)
-
     #check where that ray intersects the estimated floor plane
     plane_point = intersection_line_plane(line,line_point,plane)
-    # point = np.matmul(Pvirtual,np.asarray([plane_point[0],plane_point[1],plane_point[2], 1]))
-    # pixpoint = np.matmul(K_virt,point/point[2])
     #get the color data from the actual image corresponding to the found 3D point in the plane
     color = get_color_for_3Dpoint_in_plane(plane_point, cams, images,w_virtual,h_virtual, intrinsics)
     return color
 
 def color_virtual_image(plane,Pvirtual,w_virtual,h_virtual,images,cams,intrinsics,K_virt,decision_variable,H):
     if decision_variable == 'ray_tracing':
-        color_images = {1: np.zeros((h_virtual, w_virtual,  3)) , 2: np.zeros((h_virtual, w_virtual,  3)),
-                        3: np.zeros((h_virtual, w_virtual,  3)), 4: np.zeros((h_virtual, w_virtual,  3))}
+        color_images = {}
+        for key in images:
+            color_images[key] = np.zeros((h_virtual, w_virtual,  3))
+        # color_images = {1: np.zeros((h_virtual, w_virtual,  3)) , 2: np.zeros((h_virtual, w_virtual,  3)),
+        #                 3: np.zeros((h_virtual, w_virtual,  3)), 4: np.zeros((h_virtual, w_virtual,  3))}
         stitched_image = np.zeros((h_virtual,w_virtual, 3))
         for y in range(0,h_virtual):
             print('Loop is on: ',y)
             for x in range(0, w_virtual):
                 # t = time.time()
                 color = get_color_for_virtual_pixel(images, Pvirtual, [x, y], plane,cams,intrinsics,w_virtual,h_virtual,K_virt)
-                color_images[1][y, x, :] = color[0]
-                color_images[2][y, x, :] = color[1]
-                color_images[3][y, x, :] = color[2]
-                color_images[4][y, x, :] = color[3]
+                # color_images[1][y, x, :] = color[0]
+                # color_images[2][y, x, :] = color[1]
+                # color_images[3][y, x, :] = color[2]
+                # color_images[4][y, x, :] = color[3]
                 # elapsed = time.time() - t
                 # print('time for get_color_for_3Dpoint_in_plane: ', elapsed)
-                for i in range(0,4):
+                for i, key in enumerate(images):
+                    color_images[key][y, x, :] = color[i]
                     if color[i][0] is not None:
                         stitched_image[y,x,:] = color[i]
-        imgs = []
-        for key in color_images:
-            imgs.append(color_images[key])
-        imgs = np.asarray(imgs)
-        print(imgs.shape)
+        # imgs = []
+        # for key in color_images:
+        #     imgs.append(color_images[key])
+        # imgs = np.asarray(imgs)
         return color_images, stitched_image
 
     elif decision_variable == 'homography':
-        color_images = {1: np.zeros((h_virtual, w_virtual, 3)), 2: np.zeros((h_virtual, w_virtual, 3)),
-                        3: np.zeros((h_virtual, w_virtual, 3)), 4: np.zeros((h_virtual, w_virtual, 3))}
+        color_images = {}
+        # for key in cams:
+
+        # color_images = {1: np.zeros((h_virtual, w_virtual, 3)), 2: np.zeros((h_virtual, w_virtual, 3)),
+        #                 3: np.zeros((h_virtual, w_virtual, 3)), 4: np.zeros((h_virtual, w_virtual, 3))}
         stitched_image = np.zeros((h_virtual, w_virtual, 3))
         K = {}
         dist = {}
         for key in cams:
+            color_images[key] = np.zeros((h_virtual, w_virtual, 3))
             Ktemp, disttemp = COLMAP_functions.build_intrinsic_matrix(intrinsics[key])
             K[key] = Ktemp
             dist[key] = disttemp
@@ -132,8 +136,10 @@ def color_virtual_image(plane,Pvirtual,w_virtual,h_virtual,images,cams,intrinsic
                     # print('index',index)
                     pixel = [x, y, 1]
                     # pixel_norm = np.matmul(np.linalg.inv(K_virt),np.asarray(pixel))
+                    # print(pixel_norm)
                     image_point = np.matmul(H[index], pixel)
-                    # image_point = np.matmul(K[index],image_point) / image_point[-1]
+                    # image_point = np.matmul(K[index],image_point)
+                    # print(image_point)
                     image_point = image_point / image_point[-1]
                     pix_x = int(image_point[0])
                     pix_y = int(image_point[1])
@@ -205,15 +211,15 @@ def create_virtual_camera(camera_matrices):
     ynew = ynew/normy
 
     Rvirt = np.asarray([[xnew[0][0], xnew[0][1], xnew[0][2]],[ynew[0][0], ynew[0][1], ynew[0][2]],
-                        [virt_principal_axis[0][0],virt_principal_axis[0][1],virt_principal_axis[0][2]]])
+                        [virt_principal_axis[0][0],virt_principal_axis[0][1],virt_principal_axis[0][2]]],dtype='float')
 
-    tvirt = np.matmul(-Rvirt,np.asarray([virt_center[0][0],virt_center[1][0],virt_center[2][0]]))
+    tvirt = np.asarray(np.matmul(-Rvirt,np.asarray([virt_center[0][0],virt_center[1][0],virt_center[2][0]])),dtype='float')
 
     Pvirt = np.column_stack((Rvirt,tvirt))
 
     return Pvirt
 
-def compute_homography(P_virt, P_real, plane):
+def compute_homography(P_virt, P_real, K_virt, K_real, plane,):
     # Determine rotational matrices and translation vectors:
     R_virt = P_virt[:3, :3]
     R_real = P_real[:3, :3]
@@ -226,20 +232,22 @@ def compute_homography(P_virt, P_real, plane):
 
     # Camera center:
     cam_center = np.matmul(-np.linalg.inv(R_virt), t_virt)
+    # cam_center = np.matmul(-np.linalg.inv(R_real), t_real)
+
     # cam_center = np.divide(cam_center, cam_center[-1])
 
     # Compute distance between point and plane:
     num = abs((plane[0] * cam_center[0] + plane[1] * cam_center[1] + plane[2] * cam_center[2] + plane[3]))
-    den = (math.sqrt(cam_center[0] * cam_center[0] + cam_center[1] * cam_center[1] + cam_center[2] * cam_center[2]))
+    den = (math.sqrt(plane[0] * plane[0] + plane[1] * plane[1] + plane[2] * plane[2]))
     d = num / den
 
-    # Normalize plane:
-    # plane_norm = np.divide(plane, plane[-1])
     n = np.asarray(plane[0:3])
     n_transpose = n.transpose()
 
     # Compute homography:
     # H = np.matmul(R_virt, R_real_transpose) - np.matmul((np.matmul(np.matmul(-R_virt, R_real_transpose), t_real) + t_virt), n_transpose) / d
-    H = np.matmul(R_real, R_virt_transpose) - np.matmul((np.matmul(np.matmul(-R_real, R_virt_transpose), t_virt) + t_real), n_transpose) / d
+    Htemp = np.matmul(R_real, R_virt_transpose) - np.matmul((np.matmul(np.matmul(-R_real, R_virt_transpose), t_virt) + t_real), n_transpose) / d
+    H = np.matmul(K_real,np.matmul(Htemp,np.linalg.inv(K_virt)))
+    # H=Htemp
 
-    return H
+    return H,cam_center,d
