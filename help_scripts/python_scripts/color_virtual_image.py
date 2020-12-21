@@ -2,11 +2,9 @@ import numpy as np
 import math
 from help_scripts.python_scripts import COLMAP_functions
 from help_scripts.python_scripts import estimate_plane
-import time
-from sympy import Matrix
+
 
 def line_from_pixel(pixelpoint,Pvirt,K):
-    # tid = time.time()
 
     f = K[0,0]
     cx = K[0,2]
@@ -19,8 +17,7 @@ def line_from_pixel(pixelpoint,Pvirt,K):
     line_point = np.transpose(C)
     vec_len = np.sqrt(np.power((x - cx), 2) + np.power((y - cy), 2) + np.power(f, 2))
     line_dir = np.transpose((C + np.matmul(np.transpose(R), np.asarray([x-cx, y-cy, f])/vec_len))) - np.transpose(C) # unit vec
-    # elapsed = time.time() - tid
-    # print('time for line_from_pixel: ', elapsed)
+
     return line_dir, line_point
 
 def intersection_line_plane(ray,ray_point,plane):
@@ -36,8 +33,7 @@ def intersection_line_plane(ray,ray_point,plane):
         w = ray_point - plane_point
         si = -plane_normal.dot(w) / ndotu
         Psi = w + si*ray + plane_point
-    # elapsed = time.time() - t
-    # print('time for intersection_line_plane: ', elapsed)
+
     return Psi
 
 def get_color_for_3Dpoint_in_plane(plane_point, cams, images,image_w, image_h, intrinsics):
@@ -60,10 +56,9 @@ def get_color_for_3Dpoint_in_plane(plane_point, cams, images,image_w, image_h, i
         #                          + dist[1] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),4))
         # pixels_dist[1] = pixels[1] * (1 + dist[0] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),2)
         #                    + dist[1] * math.pow(math.sqrt(math.pow(pixels[0],2) + math.pow(pixels[1],2)),4))
-        # print('distpix',pixels_dist)
+        pixels_dist[0] =  pixels[0] * (1 + dist[0]*(math.pow(pixels[0],2)+math.pow(pixels[1],2)))
+        pixels_dist[1] = pixels[1] * (1 + dist[0] * (math.pow(pixels[0],2) + math.pow(pixels[1],2)))
         pixels = np.matmul(K,pixels_dist)
-        # pixels = pixels/pixels[2]
-
         pix_x = int(pixels[0])
         pix_y = int(pixels[1])
 
@@ -72,8 +67,7 @@ def get_color_for_3Dpoint_in_plane(plane_point, cams, images,image_w, image_h, i
             colors.append(color)
         else:
             colors.append(images[key][pix_y,pix_x,:3])
-    # elapsed = time.time() - t
-    # print('time for get_color_for_3Dpoint_in_plane: ', elapsed)
+
     return colors
 
 
@@ -91,66 +85,51 @@ def color_virtual_image(plane,Pvirtual,w_virtual,h_virtual,images,cams,intrinsic
         color_images = {}
         for key in images:
             color_images[key] = np.zeros((h_virtual, w_virtual,  3))
-        # color_images = {1: np.zeros((h_virtual, w_virtual,  3)) , 2: np.zeros((h_virtual, w_virtual,  3)),
-        #                 3: np.zeros((h_virtual, w_virtual,  3)), 4: np.zeros((h_virtual, w_virtual,  3))}
+
         stitched_image = np.zeros((h_virtual,w_virtual, 3))
         for y in range(0,h_virtual):
             print('Loop is on: ',y)
             for x in range(0, w_virtual):
-                # t = time.time()
                 color = get_color_for_virtual_pixel(images, Pvirtual, [x, y], plane,cams,intrinsics,w_virtual,h_virtual,K_virt)
-                # color_images[1][y, x, :] = color[0]
-                # color_images[2][y, x, :] = color[1]
-                # color_images[3][y, x, :] = color[2]
-                # color_images[4][y, x, :] = color[3]
-                # elapsed = time.time() - t
-                # print('time for get_color_for_3Dpoint_in_plane: ', elapsed)
                 for i, key in enumerate(images):
                     color_images[key][y, x, :] = color[i]
                     if color[i][0] is not None:
                         stitched_image[y,x,:] = color[i]
-        # imgs = []
-        # for key in color_images:
-        #     imgs.append(color_images[key])
-        # imgs = np.asarray(imgs)
         return color_images, stitched_image
 
     elif decision_variable == 'homography':
-        color_images = {}
-        # for key in cams:
-
-        # color_images = {1: np.zeros((h_virtual, w_virtual, 3)), 2: np.zeros((h_virtual, w_virtual, 3)),
-        #                 3: np.zeros((h_virtual, w_virtual, 3)), 4: np.zeros((h_virtual, w_virtual, 3))}
         stitched_image = np.zeros((h_virtual, w_virtual, 3))
+        color_images = {}
         K = {}
         dist = {}
-        for key in cams:
+        w_real = {}
+        h_real = {}
+        for key in range(1,5):
             color_images[key] = np.zeros((h_virtual, w_virtual, 3))
             Ktemp, disttemp = COLMAP_functions.build_intrinsic_matrix(intrinsics[key])
             K[key] = Ktemp
             dist[key] = disttemp
+            w_real[key] = len(images[key][0,:,0])
+            h_real[key] = len(images[key][:, 0, 0])
+
         for y in range(0, h_virtual):
             print('Loop is on: ', y)
             for x in range(0, w_virtual):
-                for index in H:
-                    # print('index',index)
+                for index in range(1,5):
                     pixel = [x, y, 1]
-                    # pixel_norm = np.matmul(np.linalg.inv(K_virt),np.asarray(pixel))
-                    # print(pixel_norm)
-                    image_point = np.matmul(H[index], pixel)
-                    # image_point = np.matmul(K[index],image_point)
-                    # print(image_point)
+                    pixel_norm = np.matmul(np.linalg.inv(K_virt),np.asarray(pixel))
+                    image_point = np.matmul(H[index], pixel_norm)
                     image_point = image_point / image_point[-1]
+                    image_point = np.matmul(K[index],image_point)
+
+
                     pix_x = int(image_point[0])
                     pix_y = int(image_point[1])
-                    # print('pixx',pix_x)
-                    # print('pixy', pix_y)
-                    # print('w and h',w_virtual,h_virtual)
-                    if pix_x >= w_virtual or pix_x < 0 or pix_y >= h_virtual or pix_y < 0:
+
+                    if pix_x >= w_real[key] or pix_x < 0 or pix_y >= h_real[key] or pix_y < 0:
                         color_images[index][y, x, :3] = [None, None, None]
                     else:
                         color_images[index][y, x, :3] = images[index][pix_y, pix_x,:3]
-                    # if color_images[index][y, x, 0] is not None:
                         stitched_image[y, x, :3] = color_images[index][y, x, :3]
         return color_images, stitched_image
 
@@ -189,7 +168,7 @@ def mean_color(color_images, w_virtual, h_virtual):
 
     return mean_color_matrix
 
-def create_virtual_camera(camera_matrices):
+def create_virtual_camera(camera_matrices,plane):
     centers = {}
     axes = {}
     for index,cam in enumerate(camera_matrices):
@@ -197,21 +176,24 @@ def create_virtual_camera(camera_matrices):
         centers[index] = cam_center
         axes[index] = principal_axis
     virt_center = (centers[0]+centers[1]+centers[2]+centers[3])/4
-    virt_principal_axis = (axes[0]+axes[1]+axes[2]+axes[3])/4
 
+    plane = plane/plane[3]
+    virt_principal_axis = np.asarray([plane[0],plane[1],plane[2]],dtype='float')/np.linalg.norm([plane[0],plane[1],plane[2]])#(axes[0]+axes[1]+axes[2]+axes[3])/4
+
+    virt_principal_axis = -virt_principal_axis
     x = np.array([1, 0, 0])
     y = np.array([0, 1, 0])
 
-    xnew = np.cross(x,np.asarray(virt_principal_axis))
-    normx = math.sqrt(math.pow(xnew[0][0],2) + math.pow(xnew[0][1],2) + math.pow(xnew[0][2],2))
+    xnew = np.cross(x,virt_principal_axis)
+    normx = math.sqrt(math.pow(xnew[0],2) + math.pow(xnew[1],2) + math.pow(xnew[2],2))
     xnew = xnew/normx
 
     ynew = np.cross(y,virt_principal_axis)
-    normy = math.sqrt(math.pow(ynew[0][0],2) + math.pow(ynew[0][1],2) + math.pow(ynew[0][2],2))
+    normy = math.sqrt(math.pow(ynew[0],2) + math.pow(ynew[1],2) + math.pow(ynew[2],2))
     ynew = ynew/normy
 
-    Rvirt = np.asarray([[xnew[0][0], xnew[0][1], xnew[0][2]],[ynew[0][0], ynew[0][1], ynew[0][2]],
-                        [virt_principal_axis[0][0],virt_principal_axis[0][1],virt_principal_axis[0][2]]],dtype='float')
+    Rvirt = np.asarray([[xnew[0], xnew[1], xnew[2]],[ynew[0], ynew[1], ynew[2]],
+                        [virt_principal_axis[0],virt_principal_axis[1],virt_principal_axis[2]]],dtype='float')
 
     tvirt = np.asarray(np.matmul(-Rvirt,np.asarray([virt_center[0][0],virt_center[1][0],virt_center[2][0]])),dtype='float')
 
@@ -219,35 +201,44 @@ def create_virtual_camera(camera_matrices):
 
     return Pvirt
 
-def compute_homography(P_virt, P_real, K_virt, K_real, plane,):
+def compute_homography(P_virt, P_real, K_virt, K_real, plane):
     # Determine rotational matrices and translation vectors:
-    R_virt = P_virt[:3, :3]
-    R_real = P_real[:3, :3]
-    t_virt = P_virt[:3, 3]
-    t_real = P_real[:3, 3]
+    print('plane: ',plane)
+    print('pvirt: ',P_virt)
+    print('preal: ', P_real)
+    print(P_virt)
 
-    # Rotation matrix transpose:
-    # R_real_transpose = R_real.transpose()
-    R_virt_transpose = R_virt.transpose()
+    #create transform
+    P_transform = np.vstack((P_virt,[0, 0, 0, 1]))
 
-    # Camera center:
-    cam_center = np.matmul(-np.linalg.inv(R_virt), t_virt)
-    # cam_center = np.matmul(-np.linalg.inv(R_real), t_real)
+    #transform cameras
+    P_real_trans = np.matmul(P_real,np.linalg.inv(P_transform))
+    P_virt_trans = np.matmul(P_virt,np.linalg.inv(P_transform))
 
-    # cam_center = np.divide(cam_center, cam_center[-1])
+    print('det: ',np.linalg.det(P_real_trans[:3,:3]))
 
-    # Compute distance between point and plane:
-    num = abs((plane[0] * cam_center[0] + plane[1] * cam_center[1] + plane[2] * cam_center[2] + plane[3]))
-    den = (math.sqrt(plane[0] * plane[0] + plane[1] * plane[1] + plane[2] * plane[2]))
-    d = num / den
+    #create new plane variable so old one isnt changed
+    normed_plane = plane[:]
+    #normalize plane
+    normed_plane = normed_plane / np.linalg.norm(normed_plane[:3])
 
-    n = np.asarray(plane[0:3])
-    n_transpose = n.transpose()
+    #create point on plane and transform it to calculate d'
+    point_on_plane = normed_plane[0:3]*normed_plane[3]
+    point_on_plane = np.asarray([point_on_plane[0],point_on_plane[1],point_on_plane[2],1])
+    point_on_plane = np.matmul(P_transform,point_on_plane)
 
-    # Compute homography:
-    # H = np.matmul(R_virt, R_real_transpose) - np.matmul((np.matmul(np.matmul(-R_virt, R_real_transpose), t_real) + t_virt), n_transpose) / d
-    Htemp = np.matmul(R_real, R_virt_transpose) - np.matmul((np.matmul(np.matmul(-R_real, R_virt_transpose), t_virt) + t_real), n_transpose) / d
-    H = np.matmul(K_real,np.matmul(Htemp,np.linalg.inv(K_virt)))
-    # H=Htemp
+    #transform normal to plane (a' b' c')
+    n_prim = np.asarray([normed_plane[0],normed_plane[1],normed_plane[2],0])
+    n_prim = np.matmul(np.transpose(np.linalg.inv(P_transform)),n_prim)
 
-    return H,cam_center,d
+    #calculate d'
+    d_prim = np.dot(point_on_plane,n_prim)
+    #put together new plane
+    plane_new = np.asarray([n_prim[0],n_prim[1],n_prim[2],d_prim])
+
+    #fix vectors for proper vector multiplication when calculating H
+    t_real_trans = P_real_trans[0:3,3].reshape(3,1)
+    n = plane_new[0:3].reshape(1,3)
+    #calculate H
+    H = P_real_trans[0:3,0:3] - (t_real_trans@n)/(plane_new[3])
+    return H,plane_new,P_real_trans,P_virt_trans

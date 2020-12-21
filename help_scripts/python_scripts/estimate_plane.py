@@ -23,16 +23,16 @@ def plot_3D(points,plane,all_cameras,cam_virt):
 
     X, Y = np.meshgrid(x, y)
     Z = (d + a * X + b * Y) / -c
-    plt3d = plt.figure().gca(projection='3d')
+    plt3d = plt.figure().gca(projection='3d',autoscale_on=False)
     plt3d.plot_surface(X, Y, Z, alpha=0.5)
     # plt3d.hold(True)
     plt3d.scatter3D(xyz[:,0], xyz[:,1], xyz[:,2],  cmap='Greens')
+    colors = {1: 'r', 2: 'b', 3: 'g', 4: 'c'}
     for key in all_cameras:
         cam_center, principal_axis = get_camera_center_and_axis(all_cameras[key]['P'])
-        plt3d.quiver(cam_center[0,0],cam_center[1,0],cam_center[2,0], principal_axis[0,0], principal_axis[0,1], principal_axis[0,2], length=2, color='r')
+        plt3d.quiver(cam_center[0,0],cam_center[1,0],cam_center[2,0], principal_axis[0,0], principal_axis[0,1], principal_axis[0,2], length=2, color=colors[key])
     cam_center_virt, principal_axis_virt = get_camera_center_and_axis(cam_virt)
     plt3d.quiver(cam_center_virt[0,0],cam_center_virt[1,0],cam_center_virt[2,0], principal_axis_virt[0,0], principal_axis_virt[0,1], principal_axis_virt[0,2], length=2, color='b')
-    #plt.show()
     return plt3d
 
 def get_camera_center_and_axis(P):
@@ -62,8 +62,8 @@ def ransac_find_plane(pts, threshold):
 
     while k < kmax:
         #Select subset of points and calculate preliminary plane
-        subset = np.random.randint(0, N, 4)  # randomize 3 points
-        pts_prim = pts[subset, :]
+        subset = np.random.permutation(N)  # randomize 3 points
+        pts_prim = pts[subset[0:3], :]
 
         plane_prel = compute_plane(pts_prim)
 
@@ -78,9 +78,7 @@ def ransac_find_plane(pts, threshold):
             if outliers < min_outliers:
                 # if best sub-perfect case found, save loss and iterate
                 min_outliers = outliers
-
                 plane = plane_prel
-
                 epsilon = inliers / N
                 kmax = math.log(mismatch_prob) / math.log(1 - math.pow(epsilon,3))
         else:
