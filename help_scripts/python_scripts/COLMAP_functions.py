@@ -42,9 +42,8 @@ def automatic_reconstructor():
     return
 
 
-def get_data_from_binary():
+def get_data_from_binary(dirname=os.getcwd()):
 
-    dirname = os.getcwd()
     # camera_path = dirname + '/dense/0/den/cameras.bin'
     # points_path = dirname + '/dense/0/den/points3D.bin'
     # images_path = dirname + '/dense/0/den/images.bin'
