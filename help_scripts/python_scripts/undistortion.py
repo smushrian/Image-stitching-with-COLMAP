@@ -60,7 +60,7 @@ def generate_map(K, k, img_size=(720, 1280), margin=(250, 150), full_size_img=Fa
     return map_x, map_y
 
 
-def compute_all_maps(image_dir, k_list=None):
+def compute_all_maps(image_dir, k_list=None, full_size_img=True):
 
     if k_list is None:
         # img 1 corresponds to cam 2
@@ -88,7 +88,9 @@ def compute_all_maps(image_dir, k_list=None):
                       [0, 0, 1]))
         k = k_list[map_num-1]
 
-        maps[img_key] = generate_map(K, k, img_size=(720, 1280), margin=(250, 150), full_size_img=True)
+        img_size = (720, 1280)
+        margin = (250, 150)
+        maps[img_key] = generate_map(K, k, img_size, margin, full_size_img)
 
         map_num = map_num+1
         print("")

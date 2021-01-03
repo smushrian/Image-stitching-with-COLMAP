@@ -1,38 +1,48 @@
 from help_scripts.python_scripts.COLMAP_functions import *
 from help_scripts.python_scripts.estimate_plane import *
 from help_scripts.python_scripts.color_virtual_image import *
+from help_scripts.python_scripts.undistortion import compute_all_maps
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import cv2 as cv
 
 # Perform the reconstruction to get data
-automatic_reconstructor()
+#automatic_reconstructor()
 # image_undistorter()
 # stereo_fusion()
 
-cameras, points3D, images = get_data_from_binary()
+image_dir = r'/Users/ludvig/Documents/SSY226 Design project in MPSYS/Image-stitching-with-COLMAP/COLMAP_w_CUDA/'
+cameras, points3D, images = get_data_from_binary(image_dir)
 coordinates = []
 for key in points3D:
     coordinates.append(points3D[key].xyz)
 coordinates = np.asarray(coordinates)
 
 #Estimate a floor plane
-plane, min_outlier = ransac_find_plane(coordinates, 0.01)
-print('plane: ',plane)
+plane, _ = ransac_find_plane(coordinates, threshold=0.01)
+
 # Get all camera matrices and images
 camera_intrinsics = {}
 all_camera_matrices = {}
 imgs = {}
-image_dir = '../COLMAP_w_CUDA/images/'
+#image_dir = '../COLMAP_w_CUDA/images/'
 # image_dir = '../COLMAP_w_CUDA/dense/0/images/'
 
-for key in images:
+maps = compute_all_maps(r'/Users/ludvig/Documents/SSY226 Design project in MPSYS/Image-stitching-with-COLMAP/COLMAP_w_CUDA/', full_size_img=False)
+
+# Rearrange COLMAP data
+for key in images.keys():
     print('cameraid, name', images[key].camera_id, cameras[key].id)
-    imgs[images[key].camera_id] = np.asarray(plt.imread(image_dir + images[key].name))
+    imgs[images[key].camera_id] = np.asarray(plt.imread(image_dir+"images/" + images[key].name))
+
+    map_x, map_y = maps[key]
+    imgs[images[key].camera_id] = cv.remap(imgs[images[key].camera_id], map_x, map_y, cv.INTER_LANCZOS4)
+
     all_camera_matrices[images[key].camera_id] = camera_quat_to_P(images[key].qvec, images[key].tvec)
     camera_intrinsics[cameras[key].id] = cameras[key]
 
-# VIRTUAL CAMERA WIITH MEAN CENTER OF OTHER CAMERAS AND PRINCIPAL AXIS AS PLANE NORMAL
+# VIRTUAL CAMERA WITH MEAN CENTER OF OTHER CAMERAS AND PRINCIPAL AXIS AS PLANE NORMAL
 Pv = create_virtual_camera(all_camera_matrices,plane)
 w = 500
 h = 500

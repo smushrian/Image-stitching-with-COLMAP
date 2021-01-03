@@ -47,16 +47,18 @@ def ransac_find_plane(pts, threshold):
 # threshold: Scalar, threshold , threshold for points to be inliers
 # plane: 4x1, plane on the form ax + by + cz + d = 0
 
+    print("Estimating floor plane...")
+
     if threshold == 0:
         print('Threshold = 0 may give false outliers due to machine precision errors')
 
     # Init
     N = len(pts)
-    epsilon = 0.4  # epsilon0
+    epsilon = 0.1  # epsilon0
 
-    mismatch_prob = 0.3  # eta
+    mismatch_prob = 0.1  # eta
 
-    kmax = math.log(mismatch_prob) / math.log(1 - math.pow(epsilon, 3))
+    kmax = int(math.log(mismatch_prob) / math.log(1 - math.pow(epsilon, 3)))
     min_outliers = N
     k = 1
 
@@ -79,24 +81,29 @@ def ransac_find_plane(pts, threshold):
                 # if best sub-perfect case found, save loss and iterate
                 min_outliers = outliers
                 plane = plane_prel
+                # Commenting these out as we're not really in a hurry -> take time to find best plane
                 epsilon = inliers / N
-                kmax = math.log(mismatch_prob) / math.log(1 - math.pow(epsilon,3))
+                kmax = math.log(mismatch_prob) / math.log(1 - math.pow(epsilon, 3))
         else:
-            # If best case found(outliers=0), return immidiately
-            print('# of outliers !> 0. (this case is not yet tested)')
+            # If best case found(outliers=0), return immediately
+            print('# of outliers !> 0. (THIS CASE HAS NOT YET BEEN TESTED)\nIF THIS SHOWS; SOMETHING IS LIKELY WRONG')
             plane = plane_prel
             min_outliers = outliers
             print('Total # of iterations was ' + str(k) + ' with 0% outliers.')
             return plane, min_outliers
 
+        print("", end="\r")
+        print("{:.2f} % done.".format(100 * (k + 1) / kmax), end="")
         k = k + 1
 
-    print('Total # of iterations was ' + str(k) + ' and optimal percentage of outliers was ' + str((min_outliers / N) * 100) + '%.')
+    print('\nTotal # of RANSAC iterations was {} and optimal percentage of outliers was {:.2f} %\n'.format(k, (100*min_outliers/N)))
     return plane, min_outliers
 
 def compute_plane(pts):
-    # pts: 3x3, 3 3D points of form 3x1
-    # plane: 4x1, plane such that Ax + By + Cz + D = 0
+    """
+    :param pts: 3x3, 3 3D points of form 3x1
+    :return: 4x1, plane such that Ax + By + Cz + D = 0
+    """
 
     A = pts[0, :]
     B = pts[1, :]
@@ -111,19 +118,22 @@ def compute_plane(pts):
     return plane
 
 def residual_lengths_points_to_plane(pts, plane):
-    #pts: 3xN 3D points
-    #plane: 4x1 [a,b,c,d] such that ax+by+cz+d=0
-    #residual_lengths: 1xN the minimum distance from all points to the plane
+    """
+    :param pts: pts: 3xN 3D points
+    :param plane: 4x1 [a,b,c,d] such that ax+by+cz+d=0
+    :return residual_lengths: 1xN the minimum distance from all points to the plane
+    """
+
     N = len(pts[:, 0])
     normal_vec = np.divide(plane[:3], math.sqrt(sum(np.power(plane[:3], 2))))
     residual_lengths = np.zeros(N)
 
     # find a point on the plane
-    if plane[0] != 0:
+    if not math.isclose(plane[0], 0, rel_tol=1e-04, abs_tol=1e-05):
         P = [-plane[3]/plane[0], 0, 0]
-    elif plane[1] != 0:
+    elif not math.isclose(plane[1], 0, rel_tol=1e-04, abs_tol=1e-05):
         P = [0, -plane[3] / plane[1], 0]
-    elif plane[2] != 0:
+    elif not math.isclose(plane[2], 0, rel_tol=1e-04, abs_tol=1e-05):
         P = [0, 0, -plane[3] / plane[2]]
     else:
         P = [0, 0, 0]
