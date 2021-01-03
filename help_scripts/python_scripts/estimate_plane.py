@@ -1,45 +1,5 @@
 import numpy as np
 import math
-import matplotlib.pyplot as plt
-from sympy import Matrix
-from scipy.spatial.transform import Rotation as R
-
-
-def plot_3D(points,plane,all_cameras,cam_virt):
-    dict_length = len(points)
-    coordinates = []
-    # ids = []
-    # for i in range(1, dict_length + 1):
-    for key in points:
-        # print(point)
-        coordinates.append(points[key].xyz)
-        # ids.append(points[i].id)
-
-    xyz = np.asarray(coordinates)
-    # ax = plt.axes(projection='3d')
-    a, b, c, d = plane
-    x = np.linspace(-5, 5, 10)
-    y = np.linspace(-5, 5, 10)
-
-    X, Y = np.meshgrid(x, y)
-    Z = (d + a * X + b * Y) / -c
-    plt3d = plt.figure().gca(projection='3d',autoscale_on=False)
-    plt3d.plot_surface(X, Y, Z, alpha=0.5)
-    # plt3d.hold(True)
-    plt3d.scatter3D(xyz[:,0], xyz[:,1], xyz[:,2],  cmap='Greens')
-    colors = {1: 'r', 2: 'b', 3: 'g', 4: 'c'}
-    for key in all_cameras:
-        cam_center, principal_axis = get_camera_center_and_axis(all_cameras[key]['P'])
-        plt3d.quiver(cam_center[0,0],cam_center[1,0],cam_center[2,0], principal_axis[0,0], principal_axis[0,1], principal_axis[0,2], length=2, color=colors[key])
-    cam_center_virt, principal_axis_virt = get_camera_center_and_axis(cam_virt)
-    plt3d.quiver(cam_center_virt[0,0],cam_center_virt[1,0],cam_center_virt[2,0], principal_axis_virt[0,0], principal_axis_virt[0,1], principal_axis_virt[0,2], length=2, color='b')
-    return plt3d
-
-def get_camera_center_and_axis(P):
-    P = Matrix(P)
-    cam_center = P.nullspace()[0]
-    principal_axis = P[2, :3]
-    return np.asarray(cam_center), np.asarray(principal_axis)
 
 
 def ransac_find_plane(pts, threshold):
@@ -47,7 +7,7 @@ def ransac_find_plane(pts, threshold):
 # threshold: Scalar, threshold , threshold for points to be inliers
 # plane: 4x1, plane on the form ax + by + cz + d = 0
 
-    print("Estimating floor plane...")
+    print("\nEstimating floor plane...")
 
     if threshold == 0:
         print('Threshold = 0 may give false outliers due to machine precision errors')
@@ -63,13 +23,13 @@ def ransac_find_plane(pts, threshold):
     k = 1
 
     while k < kmax:
-        #Select subset of points and calculate preliminary plane
+        # Select subset of points and calculate preliminary plane
         subset = np.random.permutation(N)  # randomize 3 points
         pts_prim = pts[subset[0:3], :]
 
         plane_prel = compute_plane(pts_prim)
 
-        #Measure performance of prel plane
+        # Measure performance of prel plane
         residual_lengths = residual_lengths_points_to_plane(pts, plane_prel)
 
         outliers = sum(residual_lengths > threshold)
@@ -82,8 +42,8 @@ def ransac_find_plane(pts, threshold):
                 min_outliers = outliers
                 plane = plane_prel
                 # Commenting these out as we're not really in a hurry -> take time to find best plane
-                epsilon = inliers / N
-                kmax = math.log(mismatch_prob) / math.log(1 - math.pow(epsilon, 3))
+                #epsilon = inliers / N
+                #kmax = math.log(mismatch_prob) / math.log(1 - math.pow(epsilon, 3))
         else:
             # If best case found(outliers=0), return immediately
             print('# of outliers !> 0. (THIS CASE HAS NOT YET BEEN TESTED)\nIF THIS SHOWS; SOMETHING IS LIKELY WRONG')
@@ -147,10 +107,3 @@ def residual_lengths_points_to_plane(pts, plane):
 
     return residual_lengths
 
-def camera_quat_to_P(quat, t):
-    quat_scalar_last = [quat[1],quat[2],quat[3],quat[0]]
-    R_matrix = R.from_quat(quat_scalar_last).as_matrix()
-    t = np.asarray(t)
-    P = np.column_stack((R_matrix,t))
-    cam = {'P': P, 'R': R_matrix, 't': t}
-    return cam

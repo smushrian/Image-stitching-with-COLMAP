@@ -1,8 +1,8 @@
 import numpy as np
 import math
 from help_scripts.python_scripts import COLMAP_functions
-from help_scripts.python_scripts import estimate_plane
-
+import cv2 as cv
+import matplotlib.pyplot as plt
 
 def line_from_pixel(pixelpoint,Pvirt,K):
 
@@ -80,64 +80,118 @@ def get_color_for_virtual_pixel(images,Pvirtual,pixelpoint,plane, cams,intrinsic
     color = get_color_for_3Dpoint_in_plane(plane_point, cams, images,w_virtual,h_virtual, intrinsics)
     return color
 
-def color_virtual_image(plane,Pvirtual,w_virtual,h_virtual,images,cams,intrinsics,K_virt,decision_variable,H):
+
+def stitch_image(plane,Pvirtual,w_virtual,h_virtual,images,cams,intrinsics,K_virt,decision_variable,H):
+
+    stitched_image = np.zeros((h_virtual, w_virtual, 3))
+
     if decision_variable == 'ray_tracing':
+        print('\nStitching image using ray tracing...')
         color_images = {}
         for key in images:
             color_images[key] = np.zeros((h_virtual, w_virtual,  3))
 
-        stitched_image = np.zeros((h_virtual,w_virtual, 3))
-        for y in range(0,h_virtual):
-            print('Loop is on: ',y)
+        for y in range(0, h_virtual):
+
             for x in range(0, w_virtual):
                 color = get_color_for_virtual_pixel(images, Pvirtual, [x, y], plane,cams,intrinsics,w_virtual,h_virtual,K_virt)
                 for i, key in enumerate(images):
                     color_images[key][y, x, :] = color[i]
                     if color[i][0] is not None:
                         stitched_image[y,x,:] = color[i]
+
+            print("", end="\r")
+            print("{:.2f} % done.".format(100 * (y + 1) / h_virtual), end="")
+
         return color_images, stitched_image
 
     elif decision_variable == 'homography':
-        stitched_image = np.zeros((h_virtual, w_virtual, 3))
+        print('\nStitching image using homography...')
+
         color_images = {}
+
+        K_virt_inv = np.linalg.inv(K_virt)
+
         K = {}
-        dist = {}
+        #dist = {}
         w_real = {}
         h_real = {}
-        for key in range(1,5):
-            color_images[key] = np.zeros((h_virtual, w_virtual, 3))
-            Ktemp, disttemp = COLMAP_functions.build_intrinsic_matrix(intrinsics[key])
-            K[key] = Ktemp
-            dist[key] = disttemp
-            w_real[key] = len(images[key][0,:,0])
+
+        for key in range(1, 5):
+            #color_images[key] = np.zeros((h_virtual, w_virtual, 3))
+            K[key], _ = COLMAP_functions.build_intrinsic_matrix(intrinsics[key])
+
+            #dist[key] = disttemp
+            w_real[key] = len(images[key][0, :, 0])
             h_real[key] = len(images[key][:, 0, 0])
 
-        for y in range(0, h_virtual):
-            print('Loop is on: ', y)
-            for x in range(0, w_virtual):
-                for index in range(1,5):
-                    pixel = [x, y, 1]
-                    pixel_norm = np.matmul(np.linalg.inv(K_virt),np.asarray(pixel))
-                    image_point = np.matmul(H[index], pixel_norm)
-                    image_point = image_point / image_point[-1]
-                    image_point = np.matmul(K[index],image_point)
+        homo_pixels = np.stack((np.tile(np.arange(w_virtual), h_virtual),
+                                np.repeat(np.arange(h_virtual), w_virtual, axis=0),
+                                np.ones((w_virtual*h_virtual,))), axis=1).T
 
+        pixels_norm = np.matmul(K_virt_inv, homo_pixels)
 
-                    pix_x = int(image_point[0])
-                    pix_y = int(image_point[1])
+        for index in range(1, 5):
 
-                    if pix_x >= w_real[key] or pix_x < 0 or pix_y >= h_real[key] or pix_y < 0:
-                        color_images[index][y, x, :3] = [None, None, None]
-                    else:
-                        color_images[index][y, x, :3] = images[index][pix_y, pix_x,:3]
-                        stitched_image[y, x, :3] = color_images[index][y, x, :3]
-        return color_images, stitched_image
+            img_pts = np.matmul(H[index], pixels_norm)
+            img_pts = np.matmul(K[index], img_pts/img_pts[2, :])[0:2, :].astype(int)
+
+            for idx in range(img_pts.shape[1]):
+
+                if img_pts[0, idx] < w_real[index] and img_pts[0, idx] >= 0 and img_pts[1, idx] < h_real[index] and img_pts[1, idx] >= 0:
+                    stitched_image[idx//h_virtual, idx % w_virtual, :] = images[index][img_pts[1, idx], img_pts[0, idx], :3]
+
+        print("100.00 % done.")
+        return color_images, stitched_image/255  # /255 to convert colors
 
     else:
         print('A decision variable with either "ray_tracing" or "homography" must be passed as argument.')
 
 
+def compute_homography(P_virt, P_real, K_virt, K_real, plane):
+    # Determine rotational matrices and translation vectors:
+    #print('plane: ',plane)
+    #print('pvirt: ',P_virt)
+    #print('preal: ', P_real)
+    #print(P_virt)
 
+    #create transform
+    P_transform = np.vstack((P_virt,[0, 0, 0, 1]))
+
+    #transform cameras
+    P_real_trans = np.matmul(P_real,np.linalg.inv(P_transform))
+    P_virt_trans = np.matmul(P_virt,np.linalg.inv(P_transform))
+
+    #print('det: ',np.linalg.det(P_real_trans[:3,:3]))
+
+    #create new plane variable so old one isnt changed
+    normed_plane = plane[:]
+    #normalize plane
+    normed_plane = normed_plane / np.linalg.norm(normed_plane[:3])
+
+    #create point on plane and transform it to calculate d'
+    point_on_plane = normed_plane[0:3]*normed_plane[3]
+    point_on_plane = np.asarray([point_on_plane[0],point_on_plane[1],point_on_plane[2],1])
+    point_on_plane = np.matmul(P_transform,point_on_plane)
+
+    #transform normal to plane (a' b' c')
+    n_prim = np.asarray([normed_plane[0],normed_plane[1],normed_plane[2],0])
+    n_prim = np.matmul(np.transpose(np.linalg.inv(P_transform)),n_prim)
+
+    #calculate d'
+    d_prim = np.dot(point_on_plane,n_prim)
+    #put together new plane
+    plane_new = np.asarray([n_prim[0],n_prim[1],n_prim[2],d_prim])
+
+    #fix vectors for proper vector multiplication when calculating H
+    t_real_trans = P_real_trans[0:3,3].reshape(3,1)
+    n = plane_new[0:3].reshape(1,3)
+    #calculate H
+    H = P_real_trans[0:3,0:3] - (t_real_trans@n)/(plane_new[3])
+    return H,plane_new,P_real_trans,P_virt_trans
+
+"""
+# Currently unused
 def mean_color(color_images, w_virtual, h_virtual):
     mean_color_matrix = np.zeros((h_virtual, w_virtual, 3))
 
@@ -167,78 +221,4 @@ def mean_color(color_images, w_virtual, h_virtual):
             mean_color_matrix[y, x] = mean_col
 
     return mean_color_matrix
-
-def create_virtual_camera(camera_matrices,plane):
-    centers = {}
-    axes = {}
-    for index,cam in enumerate(camera_matrices):
-        cam_center, principal_axis = estimate_plane.get_camera_center_and_axis(camera_matrices[cam]['P'])
-        centers[index] = cam_center
-        axes[index] = principal_axis
-    virt_center = (centers[0]+centers[1]+centers[2]+centers[3])/4
-
-    plane = plane/plane[3]
-    virt_principal_axis = np.asarray([plane[0],plane[1],plane[2]],dtype='float')/np.linalg.norm([plane[0],plane[1],plane[2]])#(axes[0]+axes[1]+axes[2]+axes[3])/4
-
-    virt_principal_axis = -virt_principal_axis
-    x = np.array([1, 0, 0])
-    y = np.array([0, 1, 0])
-
-    xnew = np.cross(x,virt_principal_axis)
-    normx = math.sqrt(math.pow(xnew[0],2) + math.pow(xnew[1],2) + math.pow(xnew[2],2))
-    xnew = xnew/normx
-
-    ynew = np.cross(y,virt_principal_axis)
-    normy = math.sqrt(math.pow(ynew[0],2) + math.pow(ynew[1],2) + math.pow(ynew[2],2))
-    ynew = ynew/normy
-
-    Rvirt = np.asarray([[xnew[0], xnew[1], xnew[2]],[ynew[0], ynew[1], ynew[2]],
-                        [virt_principal_axis[0],virt_principal_axis[1],virt_principal_axis[2]]],dtype='float')
-
-    tvirt = np.asarray(np.matmul(-Rvirt,np.asarray([virt_center[0][0],virt_center[1][0],virt_center[2][0]])),dtype='float')
-
-    Pvirt = np.column_stack((Rvirt,tvirt))
-
-    return Pvirt
-
-def compute_homography(P_virt, P_real, K_virt, K_real, plane):
-    # Determine rotational matrices and translation vectors:
-    print('plane: ',plane)
-    print('pvirt: ',P_virt)
-    print('preal: ', P_real)
-    print(P_virt)
-
-    #create transform
-    P_transform = np.vstack((P_virt,[0, 0, 0, 1]))
-
-    #transform cameras
-    P_real_trans = np.matmul(P_real,np.linalg.inv(P_transform))
-    P_virt_trans = np.matmul(P_virt,np.linalg.inv(P_transform))
-
-    print('det: ',np.linalg.det(P_real_trans[:3,:3]))
-
-    #create new plane variable so old one isnt changed
-    normed_plane = plane[:]
-    #normalize plane
-    normed_plane = normed_plane / np.linalg.norm(normed_plane[:3])
-
-    #create point on plane and transform it to calculate d'
-    point_on_plane = normed_plane[0:3]*normed_plane[3]
-    point_on_plane = np.asarray([point_on_plane[0],point_on_plane[1],point_on_plane[2],1])
-    point_on_plane = np.matmul(P_transform,point_on_plane)
-
-    #transform normal to plane (a' b' c')
-    n_prim = np.asarray([normed_plane[0],normed_plane[1],normed_plane[2],0])
-    n_prim = np.matmul(np.transpose(np.linalg.inv(P_transform)),n_prim)
-
-    #calculate d'
-    d_prim = np.dot(point_on_plane,n_prim)
-    #put together new plane
-    plane_new = np.asarray([n_prim[0],n_prim[1],n_prim[2],d_prim])
-
-    #fix vectors for proper vector multiplication when calculating H
-    t_real_trans = P_real_trans[0:3,3].reshape(3,1)
-    n = plane_new[0:3].reshape(1,3)
-    #calculate H
-    H = P_real_trans[0:3,0:3] - (t_real_trans@n)/(plane_new[3])
-    return H,plane_new,P_real_trans,P_virt_trans
+"""
