@@ -2,6 +2,7 @@ from help_scripts.python_scripts.COLMAP_functions import *
 from help_scripts.python_scripts.estimate_plane import ransac_find_plane
 from help_scripts.python_scripts.color_virtual_image import *
 from help_scripts.python_scripts.undistortion import compute_all_maps
+from help_scripts.python_scripts.homography import *
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -181,6 +182,30 @@ maps = compute_all_maps(r'/Users/ludvig/Documents/SSY226 Design project in MPSYS
 # Construct homography matrices
 H, plane_new, P_real_new, P_virt_trans = generate_homography_matrices(all_camera_matrices, camera_intrinsics, Pv, K_virt, plane)
 
+# Compute stitching map
+img_pts = compute_stitching_map(w, h, imgs, camera_intrinsics, K_virt, 'homography', H)
+
+
+imgs_loop, sum_undist, sum_stitch = {}, 0, 0
+
+for _ in ["r", "o", "l", "f", "m", "a", "o", "", "X", "D"]:
+#for _ in range(100):
+
+    start = time.process_time()
+
+    for img_key in imgs.keys():
+        imgs_loop[img_key] = cv.remap(imgs[img_key], maps[img_key][0], maps[img_key][1], cv.INTER_LANCZOS4)
+    end = time.process_time()
+
+    sum_undist = sum_undist + end - start
+
+    start = time.process_time()
+    # Stitch image
+    stitched_image = stitch_image_with_map(imgs_loop, img_pts, w, h)
+    end = time.process_time()
+
+    sum_stitch = sum_stitch + end - start
+"""
 start = time.process_time()
 for img_key in imgs.keys():
     map_x, map_y = maps[img_key]
@@ -190,8 +215,10 @@ for img_key in imgs.keys():
 color_images, stitched_image = stitch_image(plane, Pv, w, h, imgs, all_camera_matrices, camera_intrinsics,
                                             K_virt, 'homography', H)
 end = time.process_time()
+"""
 
-print("\nImage undistortion + stitching took {:.2f} seconds.".format(end-start))
+print("\nImage undistortion + stitching took on *average* {:.2f} seconds per set in a batch of 10.".format((sum_undist+sum_stitch)/10))
+print("Out of these, undistortion took on {:.2f} and stitching took {:.2f}".format(sum_undist/10, sum_stitch/10))
 
 plt.figure("Final image")
 plt.imshow(stitched_image)
